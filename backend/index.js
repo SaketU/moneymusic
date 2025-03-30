@@ -15,6 +15,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const Order = require("./models/order.model");
 const Stock = require("./models/stock.model");
+const AlbumCover = require("./models/albumCover.model");
 
 mongoose
    .connect(config.connectionString)
@@ -35,7 +36,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
    cors: {
-      origin: "http://localhost:3000",
+      origin: "http://localhost:3001",
       credentials: true,
    },
 });
@@ -43,7 +44,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
    cors({
-      origin: "http://localhost:3000",
+      origin: "http://localhost:3001",
       credentials: true, // Allows sending cookies and tokens
    })
 );
@@ -510,6 +511,15 @@ app.get("/tickets", async (req, res) => {
       console.error("Error fetching tickets:", error);
       res.status(500).json({ error: true, message: "Server error" });
    }
+});
+app.get("/albums", async (req, res) => {
+  try {
+    const albums = await AlbumCover.find({});
+    res.status(200).json(albums);
+  } catch (error) {
+    console.error("Error fetching album covers:", error);
+    res.status(500).json({ error: true, message: "Server error" });
+  }
 });
 
 server.listen(8000, () => console.log("Server running on port 8000"));
