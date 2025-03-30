@@ -80,6 +80,7 @@ def main():
         stock_price = compute_stock_price(artist, target_month, previous_month)
         if stock_price is not None:
             print(f"Artist: {artist_name} - Stock Price for {target_month}: {stock_price:.2f}")
+            collection.update_one({"_id": artist["_id"]}, {"$set": {"stock_price": stock_price}})
         else:
             print(f"Artist: {artist_name} - Insufficient data for {target_month}")
 
