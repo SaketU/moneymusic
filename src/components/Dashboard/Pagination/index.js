@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import "./styles.css";
-
 import Pagination from "@mui/material/Pagination";
 
-export default function PaginationControlled({ page, handlePageChange }) {
+export default function PaginationComponent({ page, total, handlePageChange }) {
+  // Calculate total pages based on a page size of 10
+  const pageCount = Math.ceil(total / 10);
+
   return (
     <div className="pagination-div">
       <Pagination
@@ -15,7 +17,7 @@ export default function PaginationControlled({ page, handlePageChange }) {
           "& .MuiPaginationItem-text:hover": {
             backgroundColor: "transparent !important",
           },
-          "& .Mui-selected  ": {
+          "& .Mui-selected": {
             backgroundColor: "var(--blue)",
             borderColor: "var(--blue)",
           },
@@ -23,7 +25,7 @@ export default function PaginationControlled({ page, handlePageChange }) {
             border: "none",
           },
         }}
-        count={10}
+        count={pageCount}
         page={page}
         onChange={handlePageChange}
       />
