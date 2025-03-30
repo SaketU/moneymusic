@@ -9,6 +9,7 @@ const userSchema = new Schema(
       email: { type: String, unique: true, required: true },
       password: { type: String, required: true }, // Password should be required if signing up
       createdOn: { type: Date, default: Date.now },
+      balance: { type: Number, default: 0 },
    },
    { collection: "Users" }
 );
