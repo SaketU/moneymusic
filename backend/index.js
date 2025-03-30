@@ -96,22 +96,20 @@ const seedMarketStocks = async () => {
    ];
 
    for (const stockData of initialStocks) {
-      let stock = await Stock.findOne({ name: stockData.name });
+      for (let i = 0; i < 10; i++) {
+         // Create 10 stocks of each artist
+         // ✅ Create a new Stock entry for each instance
+         const newStock = new Stock({
+            name: stockData.name,
+            price: stockData.price,
+         });
+         await newStock.save();
+         console.log(
+            `Created stock: ${stockData.name} with ID ${newStock._id}`
+         );
 
-      if (!stock) {
-         stock = new Stock(stockData);
-         await stock.save();
-      }
-
-      // Add 10 stocks of each artist to the Market's portfolio
-      const userStock = marketUser.stocks.find(
-         (stockItem) => stockItem.stockId.toString() === stock._id.toString()
-      );
-
-      if (!userStock) {
-         marketUser.stocks.push({ stockId: stock._id, quantity: 10 });
-      } else {
-         userStock.quantity = 10; // Reset to 10 if already exists
+         // ✅ Add the newly created stock to the Market user's portfolio
+         marketUser.stocks.push({ stockId: newStock._id });
       }
    }
 
@@ -177,15 +175,11 @@ const matchOrders = async (newOrder) => {
       const buyer = await User.findById(buyerId);
 
       if (type === "buy") {
-         // ✅ Create a new Stock entry for each portion of the matched trade
-         const newStock = new Stock({ name: stock, price: price });
-         await newStock.save();
-
-         // ✅ Add the new stock to the buyer's portfolio
-         buyer.stocks.push({
-            stockId: newStock._id,
-            quantity: matchedQuantity,
-         });
+         for (let i = 0; i < matchedQuantity; i++) {
+            const newStock = new Stock({ name: stock, price: price });
+            await newStock.save();
+            buyer.stocks.push({ stockId: newStock._id });
+         }
          await buyer.save();
       }
 
@@ -196,6 +190,16 @@ const matchOrders = async (newOrder) => {
       }
 
       if (topOrder.quantity <= 0) oppositeHeap.pop();
+
+      // ✅ Update only the Artist model with the latest price
+      await Artist.findOneAndUpdate(
+         { name: stock },
+         { price: price },
+         { upsert: true, new: true }
+      );
+
+      // ✅ Emit the new price to all connected clients
+      io.emit("priceUpdate", { stock, price });
    }
 
    if (remainingQuantity > 0) {
@@ -226,8 +230,10 @@ io.on("connection", (socket) => {
          }
 
          const user = await User.findById(userId);
-         if (!user)
+
+         if (!user) {
             return socket.emit("orderError", { message: "User not found." });
+         }
 
          const totalCost = quantity * price;
 
@@ -239,145 +245,81 @@ io.on("connection", (socket) => {
                });
             }
 
-            // 🔍 Check if ANY USER other than the Market has the stock available to sell
-            const otherUsersWithStock = await User.find({
-               _id: { $ne: userId }, // Exclude the buyer themselves
-               stocks: {
-                  $elemMatch: {
-                     stockId: stock,
-                     quantity: { $gte: quantity },
-                  },
-               },
-            });
+            // Deduct user's balance for buy order
+            user.balance -= totalCost;
+            await user.save();
 
-            if (otherUsersWithStock.length > 0) {
-               // ✅ Other users have the stock - Proceed with matching logic (normal flow)
-               console.log("Matching with other users...");
-            } else {
-               // ❌ No other users have the stock - Check the Market account
-               const marketUser = await User.findOne({ username: "Market" });
+            // ✅ Create a new Stock instance for each purchase
+            const newStock = new Stock({ name: stock, price });
+            await newStock.save();
 
-               if (!marketUser) {
-                  return socket.emit("orderError", {
-                     message: "Market account not found.",
-                  });
-               }
+            // ✅ Add this stock to the user's portfolio
+            user.stocks.push({ stockId: newStock._id });
+            await user.save();
 
-               const marketStock = marketUser.stocks.find(
-                  (stockItem) =>
-                     stockItem.stockId.toString() === stock.toString()
-               );
-
-               if (marketStock && marketStock.quantity >= quantity) {
-                  // Process the purchase directly with the Market account
-                  marketStock.quantity -= quantity;
-                  await marketUser.save();
-
-                  // ✅ Create a new Stock entry for the buyer
-                  const newStock = new Stock({ name: stock, price: price });
-                  await newStock.save();
-
-                  user.stocks.push({
-                     stockId: newStock._id,
-                     quantity: quantity,
-                  });
-
-                  user.balance -= totalCost;
-                  await user.save();
-
-                  // ✅ Create a Trade entry for the transaction
-                  const newTrade = new Trade({
-                     stock,
-                     quantity,
-                     buyOrderId: null,
-                     sellOrderId: null,
-                     buyerId: user._id,
-                     sellerId: marketUser._id,
-                     price: price,
-                  });
-
-                  await newTrade.save();
-
-                  // ✅ Emit the new price to all connected clients
-                  io.emit("priceUpdate", {
-                     stock,
-                     price,
-                  });
-
-                  socket.emit("orderPlaced", {
-                     success: true,
-                     message: "Order successfully placed from Market!",
-                     newBalance: user.balance,
-                  });
-
-                  return; // Return early since the order was handled by the Market account
-               } else {
-                  return socket.emit("orderError", {
-                     message: "Stock not available in Market.",
-                  });
-               }
-            }
+            console.log(
+               `Added new stock ${stock} to user ${user.username}'s portfolio.`
+            );
          }
 
-         // ✅ Handle Sell Orders (No Balance Adjustment Here)
-         if (type === "sell") {
-            const userStock = user.stocks.find(
-               (stockItem) => stockItem.stockId.toString() === stock.toString()
+         // ✅ Handle Sell Orders
+         else if (type === "sell") {
+            const userStockIndex = user.stocks.findIndex(
+               (stockItem) => stockItem.stockId.toString() === stock
             );
 
-            if (!userStock || userStock.quantity < quantity) {
+            if (userStockIndex === -1) {
                return socket.emit("orderError", {
-                  message: "Insufficient stock to sell.",
+                  message: "You do not own this stock.",
                });
             }
 
-            userStock.quantity -= quantity;
+            // Remove the stock from user's portfolio
+            const [removedStock] = user.stocks.splice(userStockIndex, 1);
+            await user.save();
 
-            if (userStock.quantity === 0) {
-               user.stocks = user.stocks.filter(
-                  (stockItem) =>
-                     stockItem.stockId.toString() !== stock.toString()
-               );
-            }
+            // Remove the stock from the Stock collection
+            await Stock.findByIdAndDelete(removedStock.stockId);
 
+            console.log(
+               `Removed stock ${stock} from user ${user.username}'s portfolio.`
+            );
+
+            // ✅ Credit user balance for selling stock
+            const revenue = price * quantity;
+            user.balance += revenue;
             await user.save();
          }
 
-         // Save the order as usual
+         // Save the order
          const newOrder = new Order(orderData);
          await newOrder.save();
 
-         // Process the order with matching logic
          const trades = await matchOrders(newOrder);
 
+         // ✅ Broadcast matched trades to all clients if trades occurred
          if (trades.length > 0) {
+            io.emit("tradesMatched", trades);
+
+            // ✅ Update the stock price to the last trade's price
             const lastTradePrice = trades[trades.length - 1].price;
+            await Artist.findOneAndUpdate(
+               { name: stock },
+               { price: lastTradePrice },
+               { upsert: true, new: true }
+            );
 
             io.emit("priceUpdate", {
-               stock: newOrder.stock,
+               stock,
                price: lastTradePrice,
             });
-
-            if (type === "sell") {
-               const revenue = quantity * lastTradePrice;
-               user.balance += revenue;
-               await user.save();
-
-               socket.emit("orderPlaced", {
-                  success: true,
-                  message: "Order successfully placed!",
-                  newBalance: user.balance,
-               });
-            }
-         } else {
-            if (type === "buy") {
-               socket.emit("orderPlaced", {
-                  success: true,
-                  message: "Order successfully placed!",
-                  newBalance: user.balance,
-               });
-            }
          }
+
+         socket.emit("orderPlaced", {
+            success: true,
+            message: "Order successfully placed!",
+            newBalance: user.balance,
+         });
       } catch (error) {
          console.error("Error processing order:", error);
          socket.emit("orderError", { message: "Error processing order." });
