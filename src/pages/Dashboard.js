@@ -44,7 +44,7 @@ function Dashboard() {
 
    // Filter artists locally if a search term is provided
    const filteredArtists = artists.filter((artist) =>
-      artist.Artist.toLowerCase().includes(search.trim().toLowerCase())
+      artist?.Artist?.toLowerCase().includes(search.trim().toLowerCase())
    );
 
    // Paginate the list—if searching, show the entire filtered list; otherwise, only the current page

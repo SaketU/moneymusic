@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import io from "socket.io-client";
+import axios from "axios"; // <-- Import axios for fetching user data
 import { UserContext } from "../../../UserContext";
 
 // Initialize WebSocket connection
@@ -11,30 +12,33 @@ const BuySell = ({ userID, stockName, stockPrice, onTransactionComplete }) => {
    const [error, setError] = useState("");
    const [successMessage, setSuccessMessage] = useState("");
    const [currentPrice, setCurrentPrice] = useState(stockPrice);
-   const [userPrice, setUserPrice] = useState(stockPrice); // New state for user-defined price
+   const [userPrice, setUserPrice] = useState(stockPrice);
    const { user, setUser } = useContext(UserContext);
 
    useEffect(() => {
-      // Listen for real-time price updates
       socket.on("priceUpdate", (data) => {
          if (data.stock === stockName) {
             setCurrentPrice(data.price);
          }
       });
 
-      socket.on("orderPlaced", (data) => {
+      socket.on("orderPlaced", async (data) => {
          if (data.success) {
             setSuccessMessage(`${action} successful!`);
             setQuantity(0);
 
             if (onTransactionComplete) onTransactionComplete();
+
+            // Fetch updated user data
+            await fetchUpdatedUser();
          } else {
             setError(data.message || "Transaction failed.");
          }
       });
 
-      socket.on("newTrade", (trade) => {
+      socket.on("newTrade", async (trade) => {
          console.log("New Trade Occurred:", trade);
+
          if (trade.buyerId === user._id || trade.sellerId === user._id) {
             if (trade.buyerId === user._id) {
                alert("Stock purchased successfully and added to your account.");
@@ -44,6 +48,8 @@ const BuySell = ({ userID, stockName, stockPrice, onTransactionComplete }) => {
                   "Stock sold successfully and your balance has been updated."
                );
             }
+            // Fetch updated user data
+            await fetchUpdatedUser();
          }
       });
 
@@ -53,6 +59,19 @@ const BuySell = ({ userID, stockName, stockPrice, onTransactionComplete }) => {
          socket.off("newTrade");
       };
    }, [stockName, user, action]);
+
+   const fetchUpdatedUser = async () => {
+      try {
+         const response = await axios.get("http://localhost:8000/get-user", {
+            withCredentials: true,
+         });
+         if (response.data && response.data.user) {
+            setUser(response.data.user); // Update the global user state with the new user data
+         }
+      } catch (error) {
+         console.error("Error fetching updated user data:", error);
+      }
+   };
 
    const handleActionChange = (event) => {
       setAction(event.target.value.toLowerCase());
@@ -89,7 +108,7 @@ const BuySell = ({ userID, stockName, stockPrice, onTransactionComplete }) => {
          stock: stockName,
          type: action,
          quantity: parseInt(quantity),
-         price: parseFloat(userPrice), // Use user-defined price
+         price: parseFloat(userPrice),
          userId: user._id,
       };
 
