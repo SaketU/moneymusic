@@ -6,7 +6,7 @@ import Coin from "./pages/Coin";
 import Compare from "./pages/Compare";
 import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
-import Watchlist from "./pages/Watchlist";
+import Watchlist from "./pages/Market";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ToastContainer } from "react-toastify";

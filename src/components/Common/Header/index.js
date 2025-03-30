@@ -65,7 +65,7 @@ function Header() {
    return (
       <div className="header">
          <h1>
-            CryptoTracker<span style={{ color: "var(--blue)" }}>.</span>
+            Harmoney<span style={{ color: "var(--blue)" }}>.</span>
          </h1>
          <div className="links">
             <Switch checked={darkMode} onClick={() => changeMode()} />
@@ -77,7 +77,7 @@ function Header() {
                <p className="link">Compare</p>
             </Link>
             <Link to="/watchlist">
-               <p className="link">Watchlist</p>
+               <p className="link">Market</p>
             </Link>
             <Link to="/dashboard">
                <p className="link">Dashboard</p>
@@ -86,7 +86,7 @@ function Header() {
             {user ? (
                <>
                   <span className="user-info">
-                     Welcome, {user.fullName}! - Balance: ${user.balance}
+                     Balance: ${user.balance}
                   </span>
                   <Button text={"Logout"} onClick={logout} />
                </>

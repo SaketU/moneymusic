@@ -10,6 +10,7 @@ const User = require("./models/user.model");
 const validator = require("validator");
 const Artist = require("./models/artist.model");
 const cookieParser = require("cookie-parser");
+const Ticket = require("./models/ticket.model");
 
 mongoose
    .connect(config.connectionString)
@@ -21,7 +22,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
    cors({
-      origin: "http://localhost:3000",
+      origin: "http://localhost:3001",
       credentials: true, // Allows sending cookies and tokens
    })
 );
@@ -194,8 +195,19 @@ app.get("/artists", async (req, res) => {
    }
 });
 
+app.get("/tickets", async (req, res) => {
+  try {
+    const tickets = await Ticket.find({});
+    res.status(200).json(tickets);
+  } catch (error) {
+    console.error("Error fetching tickets:", error);
+    res.status(500).json({ error: true, message: "Server error" });
+  }
+});
+
+
+
 app.listen(8000, () => {
-   console.log("Server is running on port 8000");
 });
 
 module.exports = app;
