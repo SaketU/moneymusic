@@ -1,19 +1,15 @@
 import axios from "axios";
 
-export const getCoinData = (id, setError) => {
-  const coin = axios
-    .get(`https://api.coingecko.com/api/v3/coins/${id}`)
-    .then((response) => {
-      if (response.data) {
-        return response.data;
-      }
-    })
-    .catch((e) => {
-      console.log(e.message);
-      if (setError) {
-        setError(true);
-      }
+export const getCoinData = async (id, setError) => {
+  try {
+    const response = await axios.get(`http://localhost:8000/artist/${id}`, {
+      withCredentials: true, // ensures the cookie is sent
     });
-
-  return coin;
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching artist data:", error.message);
+    if (setError) setError(true);
+    return null;
+  }
 };
+

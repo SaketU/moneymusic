@@ -43,13 +43,14 @@ function App() {
                         }
                      />
                      <Route
-                        path="/coin/:id"
-                        element={
-                           <ProtectedRoute>
-                              <Coin />
-                           </ProtectedRoute>
-                        }
-                     />
+                      path="/artist/:id"
+                      element={
+                        <ProtectedRoute>
+                          <Coin />
+                        </ProtectedRoute>
+                      }
+                    />
+
                      <Route
                         path="/compare"
                         element={

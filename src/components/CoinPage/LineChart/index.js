@@ -1,6 +1,6 @@
 import React from "react";
 import { Line } from "react-chartjs-2";
-import { Chart as ChartJS } from "chart.js/auto"; //Dont get rid of this
+import { Chart as ChartJS } from "chart.js/auto"; // Don't remove this
 
 function LineChart({ chartData, multiAxis }) {
   const options = {
@@ -15,10 +15,10 @@ function LineChart({ chartData, multiAxis }) {
       intersect: false,
     },
     scales: {
-      crypto1: {
+      data1: {
         position: "left",
       },
-      crypto2: multiAxis && {
+      data2: multiAxis && {
         position: "right",
       },
     },

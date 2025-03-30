@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./styles.css";
 import { motion } from "framer-motion";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
@@ -11,6 +11,11 @@ function Grid({ artist, delay }) {
   const [isArtistAdded, setIsArtistAdded] = useState(
     watchlist?.includes(artist._id)
   );
+
+  // Debug: log and print artist data
+  useEffect(() => {
+    console.log("Artist object in Grid:", artist);
+  }, [artist]);
 
   return (
     <a href={`/artist/${artist._id}`}>
@@ -59,6 +64,8 @@ function Grid({ artist, delay }) {
         >
           {isArtistAdded ? <StarIcon /> : <StarOutlineIcon />}
         </div>
+        {/* Debug output: print the artist object */}
+        <pre>{JSON.stringify(artist, null, 2)}</pre>
       </motion.div>
     </a>
   );

@@ -169,7 +169,19 @@ app.get("/get-user", authenticateToken, async (req, res) => {
       res.status(500).json({ message: "Server error" });
    }
 });
-
+app.get("/artist/:id", async (req, res) => {
+  try {
+    console.log("HERE")
+    const artist = await Artist.findById(req.params.id);
+    if (!artist) {
+      return res.status(404).json({ error: true, message: "Artist not found" });
+    }
+    res.status(200).json(artist);
+  } catch (error) {
+    console.error("Error fetching artist:", error.message);
+    res.status(500).json({ error: true, message: "Server error" });
+  }
+});
 // Get all artists (Protected)
 app.get("/artists", async (req, res) => {
    try {
