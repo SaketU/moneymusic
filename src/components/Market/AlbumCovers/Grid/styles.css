@@ -1,6 +1,6 @@
-/* Extend existing .grid styles for TicketGrid */
-.grid-ticket {
-  /* Ensure a column layout; similar to .grid-artist */
+/* Extend existing .grid styles for AlbumCover */
+.grid-album {
+  /* Ensure a column layout; similar to .grid-ticket */
   gap: 1.5rem;
   width: 250px;
   padding: 2rem;
@@ -11,42 +11,41 @@
   position: relative; /* For positioning the watchlist icon */
 }
 
-/* Ticket image container */
-.ticket-image-container {
+/* Album image container */
+.album-image-container {
   display: flex;
   justify-content: center;
 }
 
-/* Ticket image */
-.ticket-image {
+/* Album image */
+.album-image {
   width: 150px;   /* Adjust size as needed */
   height: 150px;  /* Square image */
   object-fit: cover;
   border-radius: 8px; /* Slightly rounded corners */
 }
 
-/* Ticket information container */
-.ticket-info {
+/* Album information container */
+.album-info {
   text-align: center;
   color: var(--white);
 }
 
-/* Ticket details styles */
-.ticket-title {
+/* Album details styles */
+.album-name {
   font-size: 1.2rem;
   font-weight: 600;
   margin: 0.5rem 0;
 }
 
-.ticket-artist,
-.ticket-venue,
-.ticket-date {
+.album-artist,
+.album-year {
   font-size: 0.9rem;
   color: var(--grey);
   margin: 0.25rem 0;
 }
 
-.ticket-price {
+.album-price {
   font-size: 1rem;
   color: var(--green);
   margin: 0.25rem 0;

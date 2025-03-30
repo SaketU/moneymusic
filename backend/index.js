@@ -11,6 +11,7 @@ const validator = require("validator");
 const Artist = require("./models/artist.model");
 const cookieParser = require("cookie-parser");
 const Ticket = require("./models/ticket.model");
+const AlbumCover = require("./models/albumCover.model");
 
 mongoose
    .connect(config.connectionString)
@@ -22,7 +23,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
    cors({
-      origin: "http://localhost:3000",
+      origin: "http://localhost:3001",
       credentials: true, // Allows sending cookies and tokens
    })
 );
@@ -206,6 +207,17 @@ app.get("/tickets", async (req, res) => {
       res.status(500).json({ error: true, message: "Server error" });
    }
 });
+
+app.get("/albums", async (req, res) => {
+  try {
+    const albums = await AlbumCover.find({});
+    res.status(200).json(albums);
+  } catch (error) {
+    console.error("Error fetching album covers:", error);
+    res.status(500).json({ error: true, message: "Server error" });
+  }
+});
+
 
 app.listen(8000, () => {});
 

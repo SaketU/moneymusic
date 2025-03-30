@@ -4,8 +4,8 @@ import { motion } from "framer-motion";
 import { Tooltip } from "@mui/material";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import StarIcon from "@mui/icons-material/Star";
-import { saveItemToWatchlist } from "../../../functions/saveItemToWatchlist";
-import { removeItemToWatchlist } from "../../../functions/removeItemToWatchlist";
+import { saveItemToWatchlist } from "../../../../functions/saveItemToWatchlist";
+import { removeItemToWatchlist } from "../../../../functions/removeItemToWatchlist";
 
 function List({ ticket, delay }) {
   // Use ticket.id if available, otherwise fallback to ticket._id

@@ -4,11 +4,11 @@ import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
 import "./styles.css";
-import Grid from "../Grid";
-import List from "../List";
-import Button from "../../Common/Button";
+import Grid from "../Grid"; // This component should render a single album cover
+import List from "../List"; // This component should render album cover details in a list view
+import Button from "../../../Common/Button";
 
-export default function TabsComponent({ tickets = [], setSearch }) {
+export default function TabsComponent({ albums = [], setSearch }) {
   const [value, setValue] = React.useState("grid");
 
   const handleChange = (event, newValue) => {
@@ -35,18 +35,18 @@ export default function TabsComponent({ tickets = [], setSearch }) {
       </div>
       <TabPanel value="grid">
         <div className="grid-flex">
-          {tickets?.length > 0 ? (
-            tickets.map((ticket, i) => (
+          {albums?.length > 0 ? (
+            albums.map((album, i) => (
               <Grid
-                ticket={ticket}
-                key={ticket.id || ticket._id}
+                album={album}
+                key={album.id || album._id}
                 delay={(i % 4) * 0.2}
               />
             ))
           ) : (
             <div>
               <h1 style={{ textAlign: "center" }}>
-                Sorry, couldn't find the ticket you're looking for 😞
+                Sorry, couldn't find the album you're looking for 😞
               </h1>
               <div
                 style={{
@@ -63,18 +63,18 @@ export default function TabsComponent({ tickets = [], setSearch }) {
       </TabPanel>
       <TabPanel value="list">
         <table className="list-flex">
-          {tickets?.length > 0 ? (
-            tickets.map((ticket, i) => (
+          {albums?.length > 0 ? (
+            albums.map((album, i) => (
               <List
-                ticket={ticket}
-                key={ticket.id || ticket._id}
+                album={album}
+                key={album.id || album._id}
                 delay={(i % 8) * 0.2}
               />
             ))
           ) : (
             <div>
               <h1 style={{ textAlign: "center" }}>
-                Sorry, couldn't find the ticket you're looking for 😞
+                Sorry, couldn't find the album you're looking for 😞
               </h1>
               <div
                 style={{

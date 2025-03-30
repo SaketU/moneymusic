@@ -35,7 +35,7 @@
   text-align: right !important;
 }
 
-/* If there are fields like totalVolume or marketCap that don't apply to tickets, remove or comment them out */
+/* If there are fields like totalVolume or marketCap that don't apply to album covers, remove or comment them out */
 /* .td-totalVolume,
 .td-marketCap {
   text-align: right !important;
@@ -54,7 +54,7 @@
     font-size: 0.7rem;
   }
 
-  /* Adjust ticket price cell alignment on smaller screens */
+  /* Adjust album price cell alignment on smaller screens */
   .td-price {
     text-align: center !important;
   }
@@ -64,8 +64,8 @@
     padding: 1.5rem 0rem;
   }
 
-  /* Update image cell class for tickets */
-  .ticket-image-td {
+  /* Update image cell class for album covers */
+  .album-image-td {
     height: 2rem;
     width: 2rem;
   }
@@ -93,7 +93,7 @@
     width: 4rem !important;
   }
 
-  .ticket-image-td {
+  .album-image-td {
     height: 2rem !important;
     width: 2rem !important;
   }
