@@ -21,7 +21,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
    cors({
-      origin: "http://localhost:3000",
+      origin: "http://localhost:3001",
       credentials: true, // Allows sending cookies and tokens
    })
 );
@@ -169,10 +169,11 @@ app.get("/get-user", authenticateToken, async (req, res) => {
       res.status(500).json({ message: "Server error" });
    }
 });
-app.get("/artist/:id", async (req, res) => {
+app.get("/artist/:id", authenticateToken, async (req, res) => {
   try {
     console.log("HERE")
     const artist = await Artist.findById(req.params.id);
+    console.log(artist)
     if (!artist) {
       return res.status(404).json({ error: true, message: "Artist not found" });
     }

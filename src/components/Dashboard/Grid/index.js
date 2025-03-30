@@ -7,14 +7,14 @@ import { saveItemToWatchlist } from "../../../functions/saveItemToWatchlist";
 import { removeItemToWatchlist } from "../../../functions/removeItemToWatchlist";
 
 function Grid({ artist, delay }) {
-  const watchlist = JSON.parse(localStorage.getItem("watchlist"));
+  const watchlist = JSON.parse(localStorage.getItem("watchlist")) || [];
   const [isArtistAdded, setIsArtistAdded] = useState(
     watchlist?.includes(artist._id)
   );
 
   // Debug: log and print artist data
   useEffect(() => {
-    console.log("Artist object in Grid:", artist);
+    console.log("Artist object in Grid:", artist._id);
   }, [artist]);
 
   return (
@@ -65,7 +65,6 @@ function Grid({ artist, delay }) {
           {isArtistAdded ? <StarIcon /> : <StarOutlineIcon />}
         </div>
         {/* Debug output: print the artist object */}
-        <pre>{JSON.stringify(artist, null, 2)}</pre>
       </motion.div>
     </a>
   );

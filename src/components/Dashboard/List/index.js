@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./styles.css";
 import { motion } from "framer-motion";
 import { Tooltip } from "@mui/material";
@@ -8,8 +8,12 @@ import { saveItemToWatchlist } from "../../../functions/saveItemToWatchlist";
 import { removeItemToWatchlist } from "../../../functions/removeItemToWatchlist";
 
 function List({ artist, delay }) {
-  const watchlist = JSON.parse(localStorage.getItem("watchlist"));
-  const [isArtistAdded, setIsArtistAdded] = useState(watchlist?.includes(artist._id));
+  // Always call hooks unconditionally.
+  const watchlist = JSON.parse(localStorage.getItem("watchlist")) || [];
+  const [isArtistAdded, setIsArtistAdded] = useState(artist ? watchlist.includes(artist._id) : false);
+
+  // If artist is not defined, return null (after hooks have been called).
+  if (!artist) return null;
 
   return (
     <a href={`/artist/${artist._id}`}>

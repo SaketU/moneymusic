@@ -1,10 +1,9 @@
 export const settingCoinObject = (data, setCoin) => {
-  // Build an object from the artist data using the available fields.
   setCoin({
     id: data.id || data._id, // Use data.id if available, otherwise _id
     name: data.name || data.Artist, // Use the 'name' field if available, otherwise 'Artist'
     image: data.artist_image || (data.image && data.image.large) || "", // Prefer artist_image
-    // For description, we can use the first album name or a fallback message
+    // For description, if there's no description provided, use a fallback that indicates album count if available
     desc:
       data.desc ||
       (data.albums && data.albums.length
@@ -13,9 +12,7 @@ export const settingCoinObject = (data, setCoin) => {
     // Map stock_price, followers, etc.
     stock_price: data.stock_price,
     Followers: data.Followers,
-    // You can repurpose these fields as needed
-    // For example, treat 'total_volume' as followers and 'market_cap' as stock_price,
-    // Or you might choose to add a dedicated field for monthly data.
+    // Repurpose fields as needed:
     total_volume: data.Followers, // using followers count
     current_price: data.stock_price, // using stock_price as current price
     market_cap: data.market_cap || null, // if available
@@ -61,7 +58,6 @@ export const settingCoinObject = (data, setCoin) => {
       "Feb-2025": data["Feb-2025"],
       "Mar-2025": data["Mar-2025"],
     },
-    // You can include any additional fields as needed (e.g., latest_songs)
     latest_songs: data.latest_songs || [],
     albums: data.albums || [],
   });

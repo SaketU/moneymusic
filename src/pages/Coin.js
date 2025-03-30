@@ -16,7 +16,7 @@ function Coin() {
   const { id } = useParams();
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [chartData, setChartData] = useState({ labels: [], datasets: [{}] });
+  const [chartData, setChartData] = useState({ labels: [], datasets: [] });
   const [coin, setCoin] = useState({});
   const [days, setDays] = useState(30);
   const [priceType, setPriceType] = useState("prices");
@@ -30,16 +30,18 @@ function Coin() {
   const getData = async () => {
     setLoading(true);
     try {
+      // Fetch coin/artist data from your API
       const coinData = await getCoinData(id, setError);
       console.log("Coin DATA>>>>", coinData);
+      // Map API response to our coin object
       settingCoinObject(coinData, setCoin);
-      if (coinData) {
-        // For coins, use the market data from the API
-        const prices = coinData.market_data ? coinData.market_data.prices : null;
-        console.log("Prices Data:", prices);
-        if (prices) {
-          settingChartData(setChartData, prices);
-        }
+      // Use the stock_prices variable for the chart data
+      if (coinData && coinData.stock_prices) {
+        const prices = coinData.stock_prices;
+        console.log("Stock Prices Data:", prices);
+        settingChartData(setChartData, prices);
+      } else {
+        console.log("No stock_prices data found.");
       }
     } catch (error) {
       console.error("Error in getData:", error);
@@ -72,10 +74,8 @@ function Coin() {
   if (loading) return <Loader />;
   if (error || !coin.id)
     return (
-      <div>
-        <h1 style={{ textAlign: "center" }}>
-          Sorry, Couldn't find the coin you're looking for 😞
-        </h1>
+      <div style={{ textAlign: "center", margin: "2rem" }}>
+        <h1>Sorry, Couldn't find the coin you're looking for 😞</h1>
         <div style={{ display: "flex", justifyContent: "center", margin: "2rem" }}>
           <a href="/dashboard">
             <Button text="Dashboard" />
