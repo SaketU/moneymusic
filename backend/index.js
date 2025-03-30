@@ -22,7 +22,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
    cors({
-      origin: "http://localhost:3001",
+      origin: "http://localhost:3000",
       credentials: true, // Allows sending cookies and tokens
    })
 );
@@ -171,18 +171,20 @@ app.get("/get-user", authenticateToken, async (req, res) => {
    }
 });
 app.get("/artist/:id", authenticateToken, async (req, res) => {
-  try {
-    console.log("HERE")
-    const artist = await Artist.findById(req.params.id);
-    console.log(artist)
-    if (!artist) {
-      return res.status(404).json({ error: true, message: "Artist not found" });
-    }
-    res.status(200).json(artist);
-  } catch (error) {
-    console.error("Error fetching artist:", error.message);
-    res.status(500).json({ error: true, message: "Server error" });
-  }
+   try {
+      console.log("HERE");
+      const artist = await Artist.findById(req.params.id);
+      console.log(artist);
+      if (!artist) {
+         return res
+            .status(404)
+            .json({ error: true, message: "Artist not found" });
+      }
+      res.status(200).json(artist);
+   } catch (error) {
+      console.error("Error fetching artist:", error.message);
+      res.status(500).json({ error: true, message: "Server error" });
+   }
 });
 // Get all artists (Protected)
 app.get("/artists", async (req, res) => {
@@ -196,18 +198,15 @@ app.get("/artists", async (req, res) => {
 });
 
 app.get("/tickets", async (req, res) => {
-  try {
-    const tickets = await Ticket.find({});
-    res.status(200).json(tickets);
-  } catch (error) {
-    console.error("Error fetching tickets:", error);
-    res.status(500).json({ error: true, message: "Server error" });
-  }
+   try {
+      const tickets = await Ticket.find({});
+      res.status(200).json(tickets);
+   } catch (error) {
+      console.error("Error fetching tickets:", error);
+      res.status(500).json({ error: true, message: "Server error" });
+   }
 });
 
-
-
-app.listen(8000, () => {
-});
+app.listen(8000, () => {});
 
 module.exports = app;
