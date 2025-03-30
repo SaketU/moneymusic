@@ -111,74 +111,38 @@ function Coin() {
                {/* Left Section: Image */}
                <div style={{ flex: 1, textAlign: "center" }}>
                   {coin.image && (
-                     <img
-                        src={coin.image}
-                        alt={coin.name}
-                        style={{
-                           width: "100px",
-                           height: "100px",
-                           borderRadius: "50%",
-                           objectFit: "cover",
-                        }}
-                     />
+                  <img
+                     src={coin.image}
+                     alt={coin.name}
+                     style={{
+                        width: "100px",
+                        height: "100px",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                     }}
+                  />
                   )}
                </div>
-               {/* Center Section: Coin Details */}
+               {/* Center Section: Coin Name */}
                <div style={{ flex: 1, textAlign: "center" }}>
-                  <h1 style={{ margin: "0 0 0.3rem 0", fontSize: "1.4rem" }}>{coin.name}</h1>
+                  <h1 style={{ margin: "0 0 0.3rem 0", fontSize: "1.4rem" }}>
+                  {coin.name}
+                  </h1>
+               </div>
+               {/* Right Section: Price & Followers */}
+               <div style={{ flex: 1, textAlign: "center" }}>
                   <h2 style={{ margin: "0 0 0.3rem 0", color: "green", fontSize: "1.1rem" }}>
-                     Price: ${roundedPrice}
+                  Price: ${roundedPrice}
                   </h2>
                   <p style={{ margin: 0, fontSize: "1rem" }}>
-                     Followers: {coin.Followers ? coin.Followers : 0}
+                  Followers: {coin.Followers ? coin.Followers : 0}
                   </p>
                </div>
-               {/* Right Section: Buy / Sell Buttons */}
-               <div style={{ flex: 1, textAlign: "center" }}>
-                  <button
-                     style={{
-                        backgroundColor: "green",
-                        color: "#fff",
-                        padding: "0.8rem 1.8rem",
-                        fontSize: "1rem",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        marginRight: "0.5rem",
-                     }}
-                  >
-                     Buy
-                  </button>
-                  <button
-                     style={{
-                        backgroundColor: "red",
-                        color: "#fff",
-                        padding: "0.8rem 1.8rem",
-                        fontSize: "1rem",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                     }}
-                  >
-                     Sell
-                  </button>
-               </div>
             </div>
-         </div>
+            </div>
 
-         {/* Audio Player Section for Latest Songs */}
-         {coin.latest_songs && coin.latest_songs.length > 0 && (
-            <div
-               className="grey-wrapper"
-               style={{ marginBottom: "1rem", padding: "1rem", textAlign: "center" }}
-            >
-               {/* Play the first available song from coin.latest_songs */}
-               <audio controls style={{ width: "100%" }}>
-                  <source src={coin.latest_songs[0].url} type="audio/mpeg" />
-                  Your browser does not support the audio element.
-               </audio>
-            </div>
-         )}
+
+        
 
          {/* Line Chart Section */}
          <div className="grey-wrapper" style={{ marginBottom: "1rem", padding: "1rem" }}>

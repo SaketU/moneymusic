@@ -55,9 +55,6 @@ const UserProfile = () => {
                 </div> */}
                 <div className="grid-artist-info">
                   <p className="grid-artist-name">{stock.name}</p>
-                  <p className="grid-artist-price">
-                    Stock Value: ${stock.price ? stock.price.toFixed(2) : "N/A"}
-                  </p>
                 </div>
               </motion.div>
             ))}
