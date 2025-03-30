@@ -8,6 +8,8 @@ const jwt = require("jsonwebtoken");
 const { authenticateToken } = require("./utils/utilities");
 const User = require("./models/user.model");
 const validator = require("validator");
+const Artist = require("./models/artist.model");
+
 
 mongoose.connect(config.connectionString);
 
@@ -147,6 +149,16 @@ app.get("/get-user", authenticateToken, async (req, res) => {
       message: "",
    });
 });
+app.get('/artists', async (req, res) => {
+  try {
+    const artists = await Artist.find({});
+    res.status(200).json(artists);
+  } catch (error) {
+    console.error("Error fetching artists:", error);
+    res.status(500).json({ error: true, message: "Server error" });
+  }
+});
+
 
 app.listen(8000, () => {
    console.log("Server is running on port 8000");
