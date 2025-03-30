@@ -8,6 +8,7 @@ import ToggleComponents from "../components/CoinPage/ToggleComponent";
 import Button from "../components/Common/Button";
 import Loader from "../components/Common/Loader";
 import AlbumCarousel from "../components/CoinPage/AlbumCarousel";
+import AudioPlayer from "../components/AudioPlayer"; // Ensure correct path
 import { getCoinData } from "../functions/getCoinData";
 import { getPrices } from "../functions/getPrices";
 import { settingChartData } from "../functions/settingChartData";
@@ -21,6 +22,7 @@ function Coin() {
    const [coin, setCoin] = useState({});
    const [days, setDays] = useState(30);
    const [priceType, setPriceType] = useState("prices");
+   const [audioClipUrl, setAudioClipUrl] = useState("");
 
    useEffect(() => {
       if (id) {
@@ -46,15 +48,22 @@ function Coin() {
       }
    };
 
+   // When coin data is loaded, choose a random audio clip from song0 to song2.
+   useEffect(() => {
+      if (coin && coin.name) {
+         // Random number between 0 and 2 (inclusive)
+         const randomNumber = Math.floor(Math.random() * 3);
+         // Build the URL based on your public folder structure
+         const clipUrl = `/assets/music/${coin.name}/song${randomNumber}.mp3`;
+         console.log("Audio Clip URL:", clipUrl);
+         setAudioClipUrl(clipUrl);
+      }
+   }, [coin]);
+
    const handleDaysChange = async (event) => {
       setLoading(true);
       setDays(event.target.value);
-      const prices = await getPrices(
-         id,
-         event.target.value,
-         priceType,
-         setError
-      );
+      const prices = await getPrices(id, event.target.value, priceType, setError);
       if (prices) {
          settingChartData(setChartData, prices);
       }
@@ -81,13 +90,7 @@ function Coin() {
       return (
          <div style={{ textAlign: "center", margin: "2rem" }}>
             <h1>Sorry, Couldn't find the coin you're looking for 😞</h1>
-            <div
-               style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  margin: "2rem",
-               }}
-            >
+            <div style={{ display: "flex", justifyContent: "center", margin: "2rem" }}>
                <a href="/dashboard">
                   <Button text="Dashboard" />
                </a>
@@ -103,17 +106,8 @@ function Coin() {
    return (
       <>
          {/* Header Section */}
-         <div
-            className="grey-wrapper"
-            style={{ marginBottom: "1rem", padding: "1rem" }}
-         >
-            <div
-               style={{
-                  display: "flex",
-                  justifyContent: "space-evenly",
-                  alignItems: "center",
-               }}
-            >
+         <div className="grey-wrapper" style={{ marginBottom: "1rem", padding: "1rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-evenly", alignItems: "center" }}>
                {/* Left Section: Image */}
                <div style={{ flex: 1, textAlign: "center" }}>
                   {coin.image && (
@@ -129,26 +123,16 @@ function Coin() {
                      />
                   )}
                </div>
-
                {/* Center Section: Coin Details */}
                <div style={{ flex: 1, textAlign: "center" }}>
-                  <h1 style={{ margin: "0 0 0.3rem 0", fontSize: "1.4rem" }}>
-                     {coin.name}
-                  </h1>
-                  <h2
-                     style={{
-                        margin: "0 0 0.3rem 0",
-                        color: "green",
-                        fontSize: "1.1rem",
-                     }}
-                  >
+                  <h1 style={{ margin: "0 0 0.3rem 0", fontSize: "1.4rem" }}>{coin.name}</h1>
+                  <h2 style={{ margin: "0 0 0.3rem 0", color: "green", fontSize: "1.1rem" }}>
                      Price: ${roundedPrice}
                   </h2>
                   <p style={{ margin: 0, fontSize: "1rem" }}>
                      Followers: {coin.Followers ? coin.Followers : 0}
                   </p>
                </div>
-
                {/* Right Section: Buy / Sell Buttons */}
                <div style={{ flex: 1, textAlign: "center" }}>
                   <button
@@ -182,17 +166,13 @@ function Coin() {
             </div>
          </div>
 
-         {/* Audio Player Section */}
+         {/* Audio Player Section for Latest Songs */}
          {coin.latest_songs && coin.latest_songs.length > 0 && (
             <div
                className="grey-wrapper"
-               style={{
-                  marginBottom: "1rem",
-                  padding: "1rem",
-                  textAlign: "center",
-               }}
+               style={{ marginBottom: "1rem", padding: "1rem", textAlign: "center" }}
             >
-               {/* Play the first available song. Adjust as needed for a playlist */}
+               {/* Play the first available song from coin.latest_songs */}
                <audio controls style={{ width: "100%" }}>
                   <source src={coin.latest_songs[0].url} type="audio/mpeg" />
                   Your browser does not support the audio element.
@@ -201,26 +181,21 @@ function Coin() {
          )}
 
          {/* Line Chart Section */}
-         <div
-            className="grey-wrapper"
-            style={{ marginBottom: "1rem", padding: "1rem" }}
-         >
+         <div className="grey-wrapper" style={{ marginBottom: "1rem", padding: "1rem" }}>
             <LineChart chartData={chartData} />
          </div>
 
-         <div
-            className="grey-wrapper"
-            style={{ marginBottom: "1rem", padding: "1rem" }}
-         >
+         {/* Audio Player Component for Random Clip */}
+         {audioClipUrl && <AudioPlayer url={audioClipUrl} />}
+
+         <div className="grey-wrapper" style={{ marginBottom: "1rem", padding: "1rem" }}>
             <BuySell stockPrice={coin.stock_price} stockName={coin.name} />
          </div>
 
          {/* Info & Albums Section */}
          <div className="grey-wrapper" style={{ padding: "1rem" }}>
             <Info title={coin.name} desc={coin.desc} />
-            {coin.albums && coin.albums.length > 0 && (
-               <AlbumCarousel albums={coin.albums} />
-            )}
+            {coin.albums && coin.albums.length > 0 && <AlbumCarousel albums={coin.albums} />}
          </div>
       </>
    );
