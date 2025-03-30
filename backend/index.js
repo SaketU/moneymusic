@@ -11,19 +11,39 @@ const validator = require("validator");
 const Artist = require("./models/artist.model");
 const cookieParser = require("cookie-parser");
 const Ticket = require("./models/ticket.model");
-const AlbumCover = require("./models/albumCover.model");
+const http = require("http");
+const { Server } = require("socket.io");
+const Order = require("./models/order.model");
+const Stock = require("./models/stock.model");
 
 mongoose
    .connect(config.connectionString)
-   .then(() => console.log("Connected to MongoDB"))
+   .then(async () => {
+      console.log("Connected to MongoDB");
+
+      // ✅ Create the Market account if it doesn't exist
+      await createMarketAccount();
+
+      // ✅ Seed the Market account with initial stocks
+      await seedMarketStocks();
+
+      console.log("Market setup completed.");
+   })
    .catch((err) => console.error("MongoDB connection error:", err));
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+   cors: {
+      origin: "http://localhost:3000",
+      credentials: true,
+   },
+});
 app.use(cookieParser());
 app.use(express.json());
 app.use(
    cors({
-      origin: "http://localhost:3001",
+      origin: "http://localhost:3000",
       credentials: true, // Allows sending cookies and tokens
    })
 );
@@ -41,6 +61,334 @@ const authenticateToken = (req, res, next) => {
       next();
    });
 };
+
+const createMarketAccount = async () => {
+   const marketUser = await User.findOne({ username: "Market" });
+
+   if (!marketUser) {
+      const market = new User({
+         fullName: "Market",
+         username: "Market",
+         email: "market@stocks.com",
+         password: await bcrypt.hash("marketpassword", 10), // Prevent login with a random password
+         balance: 1000000, // Infinite money for simplicity
+      });
+
+      await market.save();
+      console.log("Market account created.");
+   }
+};
+
+const seedMarketStocks = async () => {
+   const marketUser = await User.findOne({ username: "Market" });
+
+   if (!marketUser) {
+      console.error("Market user not found.");
+      return;
+   }
+
+   const initialStocks = [
+      { name: "Taylor Swift", price: 100 },
+      { name: "Drake", price: 80 },
+      { name: "Beyoncé", price: 120 },
+      { name: "Kanye West", price: 90 },
+      { name: "Adele", price: 110 },
+   ];
+
+   for (const stockData of initialStocks) {
+      let stock = await Stock.findOne({ name: stockData.name });
+
+      if (!stock) {
+         stock = new Stock(stockData);
+         await stock.save();
+      }
+
+      // Add 10 stocks of each artist to the Market's portfolio
+      const userStock = marketUser.stocks.find(
+         (stockItem) => stockItem.stockId.toString() === stock._id.toString()
+      );
+
+      if (!userStock) {
+         marketUser.stocks.push({ stockId: stock._id, quantity: 10 });
+      } else {
+         userStock.quantity = 10; // Reset to 10 if already exists
+      }
+   }
+
+   await marketUser.save();
+   console.log("Market account seeded with initial stocks.");
+};
+
+const { Heap } = require("heap-js");
+
+const buyOrders = {}; // Max-Heap (Highest price first)
+const sellOrders = {}; // Min-Heap (Lowest price first)
+
+const getBuyHeap = (stock) => {
+   if (!buyOrders[stock]) {
+      buyOrders[stock] = new Heap((a, b) => b.price - a.price);
+   }
+   return buyOrders[stock];
+};
+
+const getSellHeap = (stock) => {
+   if (!sellOrders[stock]) {
+      sellOrders[stock] = new Heap((a, b) => a.price - b.price);
+   }
+   return sellOrders[stock];
+};
+
+const matchOrders = async (newOrder) => {
+   const { stock, type, quantity, price, userId } = newOrder;
+   const oppositeHeap = type === "buy" ? getSellHeap(stock) : getBuyHeap(stock);
+   const matchedTrades = [];
+   let remainingQuantity = quantity;
+
+   while (!oppositeHeap.isEmpty() && remainingQuantity > 0) {
+      const topOrder = oppositeHeap.peek();
+      const priceCondition =
+         type === "buy" ? price >= topOrder.price : price <= topOrder.price;
+
+      if (!priceCondition) break;
+
+      const matchedQuantity = Math.min(remainingQuantity, topOrder.quantity);
+      remainingQuantity -= matchedQuantity;
+      topOrder.quantity -= matchedQuantity;
+
+      const buyerId = type === "buy" ? userId : topOrder.userId;
+      const sellerId = type === "sell" ? userId : topOrder.userId;
+
+      const trade = new Trade({
+         stock,
+         quantity: matchedQuantity,
+         buyOrderId: type === "buy" ? newOrder._id : topOrder._id,
+         sellOrderId: type === "sell" ? newOrder._id : topOrder._id,
+         buyerId,
+         sellerId,
+         price,
+      });
+
+      await trade.save();
+      matchedTrades.push(trade);
+
+      io.emit("newTrade", trade);
+
+      const seller = await User.findById(sellerId);
+      const buyer = await User.findById(buyerId);
+
+      if (type === "buy") {
+         // ✅ Create a new Stock entry for each portion of the matched trade
+         const newStock = new Stock({ name: stock, price: price });
+         await newStock.save();
+
+         // ✅ Add the new stock to the buyer's portfolio
+         buyer.stocks.push({
+            stockId: newStock._id,
+            quantity: matchedQuantity,
+         });
+         await buyer.save();
+      }
+
+      if (type === "sell") {
+         const revenue = matchedQuantity * price;
+         seller.balance += revenue;
+         await seller.save();
+      }
+
+      if (topOrder.quantity <= 0) oppositeHeap.pop();
+   }
+
+   if (remainingQuantity > 0) {
+      const orderData = {
+         ...newOrder._doc,
+         quantity: remainingQuantity,
+         status: "open",
+      };
+      if (type === "buy") getBuyHeap(stock).push(orderData);
+      else getSellHeap(stock).push(orderData);
+   }
+
+   await newOrder.save();
+   return matchedTrades;
+};
+
+io.on("connection", (socket) => {
+   console.log("New client connected:", socket.id);
+
+   socket.on("placeOrder", async (orderData) => {
+      try {
+         const { stock, type, quantity, price, userId } = orderData;
+
+         if (!userId) {
+            return socket.emit("orderError", {
+               message: "User ID is required.",
+            });
+         }
+
+         const user = await User.findById(userId);
+         if (!user)
+            return socket.emit("orderError", { message: "User not found." });
+
+         const totalCost = quantity * price;
+
+         // ✅ Handle Buy Orders
+         if (type === "buy") {
+            if (user.balance < totalCost) {
+               return socket.emit("orderError", {
+                  message: "Insufficient balance.",
+               });
+            }
+
+            // 🔍 Check if ANY USER other than the Market has the stock available to sell
+            const otherUsersWithStock = await User.find({
+               _id: { $ne: userId }, // Exclude the buyer themselves
+               stocks: {
+                  $elemMatch: {
+                     stockId: stock,
+                     quantity: { $gte: quantity },
+                  },
+               },
+            });
+
+            if (otherUsersWithStock.length > 0) {
+               // ✅ Other users have the stock - Proceed with matching logic (normal flow)
+               console.log("Matching with other users...");
+            } else {
+               // ❌ No other users have the stock - Check the Market account
+               const marketUser = await User.findOne({ username: "Market" });
+
+               if (!marketUser) {
+                  return socket.emit("orderError", {
+                     message: "Market account not found.",
+                  });
+               }
+
+               const marketStock = marketUser.stocks.find(
+                  (stockItem) =>
+                     stockItem.stockId.toString() === stock.toString()
+               );
+
+               if (marketStock && marketStock.quantity >= quantity) {
+                  // Process the purchase directly with the Market account
+                  marketStock.quantity -= quantity;
+                  await marketUser.save();
+
+                  // ✅ Create a new Stock entry for the buyer
+                  const newStock = new Stock({ name: stock, price: price });
+                  await newStock.save();
+
+                  user.stocks.push({
+                     stockId: newStock._id,
+                     quantity: quantity,
+                  });
+
+                  user.balance -= totalCost;
+                  await user.save();
+
+                  // ✅ Create a Trade entry for the transaction
+                  const newTrade = new Trade({
+                     stock,
+                     quantity,
+                     buyOrderId: null,
+                     sellOrderId: null,
+                     buyerId: user._id,
+                     sellerId: marketUser._id,
+                     price: price,
+                  });
+
+                  await newTrade.save();
+
+                  // ✅ Emit the new price to all connected clients
+                  io.emit("priceUpdate", {
+                     stock,
+                     price,
+                  });
+
+                  socket.emit("orderPlaced", {
+                     success: true,
+                     message: "Order successfully placed from Market!",
+                     newBalance: user.balance,
+                  });
+
+                  return; // Return early since the order was handled by the Market account
+               } else {
+                  return socket.emit("orderError", {
+                     message: "Stock not available in Market.",
+                  });
+               }
+            }
+         }
+
+         // ✅ Handle Sell Orders (No Balance Adjustment Here)
+         if (type === "sell") {
+            const userStock = user.stocks.find(
+               (stockItem) => stockItem.stockId.toString() === stock.toString()
+            );
+
+            if (!userStock || userStock.quantity < quantity) {
+               return socket.emit("orderError", {
+                  message: "Insufficient stock to sell.",
+               });
+            }
+
+            userStock.quantity -= quantity;
+
+            if (userStock.quantity === 0) {
+               user.stocks = user.stocks.filter(
+                  (stockItem) =>
+                     stockItem.stockId.toString() !== stock.toString()
+               );
+            }
+
+            await user.save();
+         }
+
+         // Save the order as usual
+         const newOrder = new Order(orderData);
+         await newOrder.save();
+
+         // Process the order with matching logic
+         const trades = await matchOrders(newOrder);
+
+         if (trades.length > 0) {
+            const lastTradePrice = trades[trades.length - 1].price;
+
+            io.emit("priceUpdate", {
+               stock: newOrder.stock,
+               price: lastTradePrice,
+            });
+
+            if (type === "sell") {
+               const revenue = quantity * lastTradePrice;
+               user.balance += revenue;
+               await user.save();
+
+               socket.emit("orderPlaced", {
+                  success: true,
+                  message: "Order successfully placed!",
+                  newBalance: user.balance,
+               });
+            }
+         } else {
+            if (type === "buy") {
+               socket.emit("orderPlaced", {
+                  success: true,
+                  message: "Order successfully placed!",
+                  newBalance: user.balance,
+               });
+            }
+         }
+      } catch (error) {
+         console.error("Error processing order:", error);
+         socket.emit("orderError", { message: "Error processing order." });
+      }
+   });
+
+   socket.on("disconnect", () => {
+      console.log("Client disconnected:", socket.id);
+   });
+});
+
 // Sign Up Route (Save user to the database)
 app.post("/signup", async (req, res) => {
    console.log("POST /signup called");
@@ -208,17 +556,5 @@ app.get("/tickets", async (req, res) => {
    }
 });
 
-app.get("/albums", async (req, res) => {
-  try {
-    const albums = await AlbumCover.find({});
-    res.status(200).json(albums);
-  } catch (error) {
-    console.error("Error fetching album covers:", error);
-    res.status(500).json({ error: true, message: "Server error" });
-  }
-});
-
-
-app.listen(8000, () => {});
-
+server.listen(8000, () => console.log("Server running on port 8000"));
 module.exports = app;
