@@ -141,6 +141,7 @@ const matchOrders = async (newOrder) => {
    const oppositeHeap = type === "buy" ? getSellHeap(stock) : getBuyHeap(stock);
    const matchedTrades = [];
    let remainingQuantity = quantity;
+   let lastMatchedPrice = price; // Store the last matched price to update Artist price
 
    while (!oppositeHeap.isEmpty() && remainingQuantity > 0) {
       const topOrder = oppositeHeap.peek();
@@ -191,15 +192,28 @@ const matchOrders = async (newOrder) => {
 
       if (topOrder.quantity <= 0) oppositeHeap.pop();
 
-      // ✅ Update only the Artist model with the latest price
-      await Artist.findOneAndUpdate(
-         { name: stock },
-         { price: price },
-         { upsert: true, new: true }
-      );
+      // ✅ Update last matched price for the stock
+      lastMatchedPrice = price;
+   }
 
-      // ✅ Emit the new price to all connected clients
-      io.emit("priceUpdate", { stock, price });
+   if (lastMatchedPrice) {
+      try {
+         // ✅ Update the Artist price with the last matched price
+         const updatedArtist = await Artist.findOneAndUpdate(
+            { name: stock },
+            { price: lastMatchedPrice },
+            { upsert: true, new: true }
+         );
+
+         // ✅ Emit the new price to all connected clients
+         io.emit("priceUpdate", { stock, price: lastMatchedPrice });
+
+         console.log(
+            `Updated artist price for ${stock} to ${lastMatchedPrice}`
+         );
+      } catch (error) {
+         console.error("Error updating artist price:", error);
+      }
    }
 
    if (remainingQuantity > 0) {
