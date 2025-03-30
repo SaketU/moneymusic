@@ -55,7 +55,10 @@ function Header() {
           <p className="link">Watchlist</p>
         </a>
         <a href="/dashboard">
-          <Button text={"dashboard"} />
+        <p className="link">Dashboard</p>
+        </a>
+        <a href="/login">
+          <Button text={"Login"} />
         </a>
       </div>
       <div className="drawer-component">
