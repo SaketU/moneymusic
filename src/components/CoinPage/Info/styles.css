@@ -8,6 +8,6 @@
 }
 
 .info-p a:hover {
-  color: var(--blue) !important;
+  color: var(--purple) !important;
   transition: all 0.3s;
 }

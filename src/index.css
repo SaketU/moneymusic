@@ -8,6 +8,7 @@
    --darkgrey: #1b1b1b;
    --green: #61c96f;
    --red: #f94141;
+   --purple: #8f00ff;
 }
 
 [data-theme="dark"] {
@@ -50,7 +51,7 @@ span {
 }
 
 ::selection {
-   background-color: var(--blue);
+   background-color: var(--purple);
    color: var(--white);
 }
 
@@ -63,7 +64,7 @@ span {
 }
 
 ::-webkit-scrollbar-thumb {
-   background: var(--blue);
+   background: var(--purple);
    border-radius: 10px;
 }
 
@@ -83,9 +84,9 @@ a {
    position: fixed;
    transform: translateX(-50%) translateY(-50%);
    pointer-events: none;
-   background-color: var(--blue);
+   background-color: var(--purple);
    z-index: 10000;
-   border: 2px solid var(--blue);
+   border: 2px solid var(--purple);
    height: 0.3rem;
    width: 0.3rem;
    border-radius: 50%;

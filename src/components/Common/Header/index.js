@@ -65,7 +65,7 @@ function Header() {
    return (
       <div className="header">
          <h1>
-            Harmoney<span style={{ color: "var(--blue)" }}>.</span>
+            Harmoney<span style={{ color: "var(--purple)" }}>.</span>
          </h1>
          <div className="links">
             <Switch checked={darkMode} onClick={() => changeMode()} />

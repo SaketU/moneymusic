@@ -1,13 +1,12 @@
 import React from "react";
 import "./styles.css";
 import { motion } from "framer-motion";
-import VinylCanvas from "../../Models/VinylCanvas";
-
+import StockTrendGif from "../StockTrendGif";
 
 function MainComponent() {
   return (
-    <div className="main-flex">
-      <div className="info-landing">
+    <div className="main-flex" style={{ position: "relative" }}>
+      <div className="info-landing" style={{ position: "relative", zIndex: 2 }}>
         <motion.h1
           className="heading1"
           initial={{ opacity: 0, x: 50 }}
@@ -30,14 +29,22 @@ function MainComponent() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 1, duration: 1 }}
         >
-          Discover the True Value of Music Artists 🚀{" "}
+          Discover the True Value of Music Artists 🚀
         </motion.p>
       </div>
 
-      {/* Canvas section with Vinyl Player */}
-      {/* <div className="canvas-container">
-        <VinylCanvas />
-      </div> */}
+      <div
+        style={{
+          position: "absolute",
+          top: "10%",
+          right: "0",
+          zIndex: 1,
+          opacity: 0.5,
+          pointerEvents: "none",
+        }}
+      >
+        <StockTrendGif />
+      </div>
     </div>
   );
 }

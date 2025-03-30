@@ -20,7 +20,7 @@ function LineChart({ chartData }) {
       },
       tooltip: {
         enabled: true,
-        backgroundColor: "#3a80e9",
+        backgroundColor: "var(--purple)",
         titleFont: {
           size: 16,
         },

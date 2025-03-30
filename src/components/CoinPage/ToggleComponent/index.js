@@ -24,17 +24,17 @@ export default function ToggleComponents({ priceType, handlePriceTypeChange }) {
         onChange={handleChange}
         sx={{
           "&.Mui-selected": {
-            color: "var(--blue) !important",
+            color: "var(--purple) !important",
           },
-          borderColor: "var(--blue)",
+          borderColor: "var(--purple)",
           border: "unset !important",
           "& .MuiToggleButtonGroup-grouped": {
-            border: "1px solid var(--blue)!important",
+            border: "1px solid var(--purple)!important",
             borderColor: "unset",
-            color: "var(--blue) !important",
+            color: "var(--purple) !important",
           },
           "& .MuiToggleButton-standard": {
-            color: "var(--blue) !important",
+            color: "var(--purple) !important",
           },
         }}
       >

@@ -18,8 +18,8 @@ export default function PaginationComponent({ page, total, handlePageChange }) {
             backgroundColor: "transparent !important",
           },
           "& .Mui-selected": {
-            backgroundColor: "var(--blue)",
-            borderColor: "var(--blue)",
+            backgroundColor: "var(--purple)",
+            borderColor: "var(--purple)",
           },
           "& .MuiPaginationItem-ellipsis": {
             border: "none",

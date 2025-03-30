@@ -18,7 +18,7 @@ export default function TabsComponent({ artists, setSearch }) {
   const style = {
     color: "var(--white)",
     "& .Mui-selected": {
-      color: "var(--blue) !important",
+      color: "var(--purple) !important",
     },
     fontFamily: "Inter,sans-serif",
     fontWeight: 600,
