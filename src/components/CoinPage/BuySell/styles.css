@@ -1,12 +1,142 @@
-.btn {
-    background-color: #8f00ff;
-    padding: 0.45rem 1.5rem;
-    border-radius: 3rem;
-    font-weight: 600;
-    font-size: 0.8rem;
-    text-transform: capitalize;
-    cursor: pointer;
-    text-align: center;
-    min-width: 80px;
-    color: white;
-  }
+:root {
+  --background: #ffffff;
+  --text-color: #333333;
+  --border-color: #dddddd;
+  --input-bg: #ffffff;
+  --input-border: #cccccc;
+  --buy-btn-bg: #6a0dad;
+  --buy-btn-hover: #580ea2;
+  --sell-btn-bg: #d32f2f;
+  --sell-btn-hover: #b71c1c;
+  --error-color: #d32f2f;
+  --success-color: #388e3c;
+}
+
+[data-theme="dark"] {
+  --background: #222222;
+  --text-color: #f7f7f7;
+  --border-color: #444444;
+  --input-bg: #333333;
+  --input-border: #555555;
+  --buy-btn-bg: #6a0dad; /* Adjust if desired */
+  --buy-btn-hover: #580ea2;
+  --sell-btn-bg: #d32f2f;
+  --sell-btn-hover: #b71c1c;
+  --error-color: #d32f2f;
+  --success-color: #388e3c;
+}
+
+.buy-sell-container {
+  max-width: 800px;
+  width: 90%;
+  margin: 2rem auto;
+  padding: 1rem;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  color: var(--text-color);
+  background-color: var(--background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.current-price-info {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.current-price-info h3 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.current-price-info p {
+  margin: 0.5rem 0;
+  font-size: 1.2rem;
+}
+
+.transaction-sections {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.transaction-section {
+  flex: 1;
+  padding: 1rem;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  margin: 0 0.5rem;
+  background-color: var(--background);
+}
+
+.transaction-section h4 {
+  text-align: center;
+  margin-bottom: 0.75rem;
+  font-size: 1.4rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.75rem;
+}
+
+.form-group label {
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+
+.form-control {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  outline: none;
+  background-color: var(--input-bg);
+  color: var(--text-color);
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.buy-btn {
+  background-color: var(--buy-btn-bg); 
+  color: #fff;
+}
+
+.buy-btn:hover {
+  background-color: var(--buy-btn-hover);
+}
+
+.sell-btn {
+  background-color: var(--sell-btn-bg); 
+  color: #fff;
+}
+
+.sell-btn:hover {
+  background-color: var(--sell-btn-hover);
+}
+
+.total-section {
+  text-align: right;
+  font-size: 1.1rem;
+  margin-top: 1rem;
+}
+
+.error-message {
+  color: var(--error-color);
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.success-message {
+  color: var(--success-color);
+  text-align: center;
+  margin-top: 1rem;
+}

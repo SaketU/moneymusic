@@ -144,15 +144,6 @@ function Market() {
               handlePageChange={handleAlbumPageChange}
             />
           )}
-          <pre
-            style={{
-              background: "#f4f4f4",
-              padding: "1rem",
-              marginTop: "1rem",
-            }}
-          >
-            {JSON.stringify(paginatedAlbums, null, 2)}
-          </pre>
         </TabPanel>
         <TabPanel value="tickets">
           <TicketTabsComponent
@@ -178,7 +169,6 @@ function Market() {
         </TabPanel>
       </TabContext>
       <TopButton />
-      <Footer />
     </>
   );
 }

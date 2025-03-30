@@ -85,7 +85,7 @@ function Header() {
 
             {user ? (
                <>
-                  <span className="user-info">Balance: ${user.balance}</span>
+                  <span className="user-info">Balance: ${parseFloat(user.balance).toFixed(2)}</span>
                   <Button text={"Logout"} onClick={logout} />
                </>
             ) : (

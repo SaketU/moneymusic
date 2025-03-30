@@ -78,20 +78,10 @@ function Dashboard() {
                      handlePageChange={handlePageChange}
                   />
                )}
-               {/* For debugging purposes—remove when not needed */}
-               <pre
-                  style={{
-                     background: "#f4f4f4",
-                     padding: "1rem",
-                     marginTop: "1rem",
-                  }}
-               >
-                  {JSON.stringify(paginatedArtists, null, 2)}
-               </pre>
+               
             </>
          )}
          <TopButton />
-         <Footer />
       </>
    );
 }
