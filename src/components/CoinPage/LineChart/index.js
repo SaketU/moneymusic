@@ -15,10 +15,6 @@ function LineChart({ chartData }) {
         display: true,
         position: "bottom",
         labels: {
-          font: {
-            family: "Inter, sans-serif",
-            size: 14,
-          },
           color: "#ccc",
         },
       },
@@ -26,11 +22,9 @@ function LineChart({ chartData }) {
         enabled: true,
         backgroundColor: "#3a80e9",
         titleFont: {
-          family: "Inter, sans-serif",
           size: 16,
         },
         bodyFont: {
-          family: "Inter, sans-serif",
           size: 14,
         },
         cornerRadius: 4,
@@ -41,10 +35,9 @@ function LineChart({ chartData }) {
       x: {
         ticks: {
           color: "#ccc",
-          font: {
-            family: "Inter, sans-serif",
-            size: 12,
-          },
+          autoSkip: false,
+          maxRotation: 60,
+          minRotation: 30,
         },
         grid: {
           display: false,
@@ -54,26 +47,11 @@ function LineChart({ chartData }) {
         beginAtZero: false,
         ticks: {
           color: "#ccc",
-          font: {
-            family: "Inter, sans-serif",
-            size: 12,
-          },
         },
         grid: {
-          display: true,
           color: "rgba(255,255,255,0.1)",
           borderDash: [5, 5],
         },
-      },
-    },
-    elements: {
-      line: {
-        tension: 0.4,
-        borderWidth: 2,
-      },
-      point: {
-        radius: 3,
-        hoverRadius: 6,
       },
     },
   };

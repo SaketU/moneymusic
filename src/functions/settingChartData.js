@@ -1,43 +1,30 @@
-export const settingChartData = (setChartData, dataPairs, days, metricType = "stock_price") => {
-  // Determine the number of months to show based on the selected days.
-  let monthsToShow;
-  if (days === 30) {
-    monthsToShow = 2;
-  } else if (days === 60) {
-    monthsToShow = 3;
-  } else if (days === 90) {
-    monthsToShow = 4;
-  } else if (days === 365) {
-    monthsToShow = 12;
-  } else if (days === 1825) {
-    monthsToShow = dataPairs.length;
-  } else {
-    // Default: show all data if days is unrecognized.
-    monthsToShow = dataPairs.length;
+export const settingChartData = (setChartData, dataPairs, monthsToShow) => {
+  if (!dataPairs || dataPairs.length === 0) {
+    setChartData({ labels: [], datasets: [] });
+    return;
   }
 
-  // Filter the data to show only the most recent months.
-  const filteredData = dataPairs.slice(-monthsToShow);
-  const labels = filteredData.map(([month]) => month);
-  const dataPoints = filteredData.map(([_, value]) => value);
+  // Sort dataPairs by month if needed. Otherwise, assume dataPairs are in chronological order.
+  // dataPairs might look like [ ["Jan-2022", 141.74], ["Feb-2022", 145.3], ... ]
+  // If you need them sorted, define a compare function here.
 
-  // Choose dataset label and colors based on metricType.
-  const datasetLabel = metricType === "monthly_listeners" ? "Monthly Listeners" : "Stock Price";
-  const backgroundColor =
-    metricType === "monthly_listeners" ? "rgba(142, 68, 173, 0.1)" : "rgba(58, 128, 233, 0.1)";
-  const borderColor =
-    metricType === "monthly_listeners" ? "#8e44ad" : "#3a80e9";
+  // Slice the last N entries
+  const filtered = dataPairs.slice(-monthsToShow);
+
+  // Separate labels and data
+  const labels = filtered.map(([month]) => month);
+  const dataPoints = filtered.map(([_, value]) => value);
 
   setChartData({
-    labels: labels,
+    labels,
     datasets: [
       {
-        label: datasetLabel,
+        label: "Stock Price",
         data: dataPoints,
         borderWidth: 2,
         fill: false,
-        backgroundColor: backgroundColor,
-        borderColor: borderColor,
+        backgroundColor: "rgba(58, 128, 233, 0.1)",
+        borderColor: "#3a80e9",
         tension: 0.25,
         pointRadius: 3,
       },

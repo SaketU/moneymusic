@@ -6,8 +6,7 @@ import SelectDays from "../components/CoinPage/SelectDays";
 import ToggleComponents from "../components/CoinPage/ToggleComponent";
 import Button from "../components/Common/Button";
 import Loader from "../components/Common/Loader";
-import List from "../components/Dashboard/List";
-import AlbumCarousel from "../components/CoinPage/AlbumCarousel"; // <-- new import
+import AlbumCarousel from "../components/CoinPage/AlbumCarousel";
 import { getCoinData } from "../functions/getCoinData";
 import { getPrices } from "../functions/getPrices";
 import { settingChartData } from "../functions/settingChartData";
@@ -31,18 +30,12 @@ function Coin() {
   const getData = async () => {
     setLoading(true);
     try {
-      // Fetch coin/artist data from your API
       const coinData = await getCoinData(id, setError);
-      console.log("Coin DATA>>>>", coinData);
-      // Map API response to our coin object
       settingCoinObject(coinData, setCoin);
-      // Use the stock_prices variable for the chart data
+
       if (coinData && coinData.stock_prices) {
         const prices = coinData.stock_prices;
-        console.log("Stock Prices Data:", prices);
         settingChartData(setChartData, prices);
-      } else {
-        console.log("No stock_prices data found.");
       }
     } catch (error) {
       console.error("Error in getData:", error);
@@ -72,7 +65,12 @@ function Coin() {
     setLoading(false);
   };
 
-  if (loading) return <Loader />;
+  if (loading)
+    return (
+      <div style={{ textAlign: "center", margin: "2rem" }}>
+        <Loader />
+      </div>
+    );
   if (error || !coin.id)
     return (
       <div style={{ textAlign: "center", margin: "2rem" }}>
@@ -85,19 +83,103 @@ function Coin() {
       </div>
     );
 
+  const roundedPrice =
+    coin.stock_price && !isNaN(coin.stock_price)
+      ? Number(coin.stock_price).toFixed(2)
+      : "N/A";
+
   return (
     <>
-      <div className="grey-wrapper">
-        <List coin={coin} delay={0.5} />
+      {/* Header Section */}
+      <div className="grey-wrapper" style={{ marginBottom: "1rem", padding: "1rem" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-evenly",
+            alignItems: "center",
+          }}
+        >
+          {/* Left Section: Image */}
+          <div style={{ flex: 1, textAlign: "center" }}>
+            {coin.image && (
+              <img
+                src={coin.image}
+                alt={coin.name}
+                style={{
+                  width: "100px",
+                  height: "100px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
+              />
+            )}
+          </div>
+
+          {/* Center Section: Coin Details */}
+          <div style={{ flex: 1, textAlign: "center" }}>
+            <h1 style={{ margin: "0 0 0.3rem 0", fontSize: "1.4rem" }}>
+              {coin.name}
+            </h1>
+            <h2 style={{ margin: "0 0 0.3rem 0", color: "green", fontSize: "1.1rem" }}>
+              Price: ${roundedPrice}
+            </h2>
+            <p style={{ margin: 0, fontSize: "1rem" }}>
+              Followers: {coin.Followers ? coin.Followers : 0}
+            </p>
+          </div>
+
+          {/* Right Section: Buy / Sell Buttons */}
+          <div style={{ flex: 1, textAlign: "center" }}>
+            <button
+              style={{
+                backgroundColor: "green",
+                color: "#fff",
+                padding: "0.8rem 1.8rem",
+                fontSize: "1rem",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                marginRight: "0.5rem",
+              }}
+            >
+              Buy
+            </button>
+            <button
+              style={{
+                backgroundColor: "red",
+                color: "#fff",
+                padding: "0.8rem 1.8rem",
+                fontSize: "1rem",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+              }}
+            >
+              Sell
+            </button>
+          </div>
+        </div>
       </div>
-      <div className="grey-wrapper">
-        <SelectDays handleDaysChange={handleDaysChange} days={days} />
-        <ToggleComponents priceType={priceType} handlePriceTypeChange={handlePriceTypeChange} />
+
+      {/* Audio Player Section */}
+      {coin.latest_songs && coin.latest_songs.length > 0 && (
+        <div className="grey-wrapper" style={{ marginBottom: "1rem", padding: "1rem", textAlign: "center" }}>
+          {/* Play the first available song. Adjust as needed for a playlist */}
+          <audio controls style={{ width: "100%" }}>
+            <source src={coin.latest_songs[0].url} type="audio/mpeg" />
+            Your browser does not support the audio element.
+          </audio>
+        </div>
+      )}
+
+      {/* Line Chart Section */}
+      <div className="grey-wrapper" style={{ marginBottom: "1rem", padding: "1rem" }}>
         <LineChart chartData={chartData} />
       </div>
-      <div className="grey-wrapper">
+
+      {/* Info & Albums Section */}
+      <div className="grey-wrapper" style={{ padding: "1rem" }}>
         <Info title={coin.name} desc={coin.desc} />
-        {/* Render the AlbumCarousel below the description if albums exist */}
         {coin.albums && coin.albums.length > 0 && (
           <AlbumCarousel albums={coin.albums} />
         )}
