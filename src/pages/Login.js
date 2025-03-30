@@ -37,14 +37,15 @@ const Login = () => {
             });
             console.log("Login Successful:", response.data);
          } else {
-            // Sign Up: call the /set-password endpoint with required fields.
-            response = await axios.post("http://localhost:8000/set-password", {
+            // Sign Up: call the /signup endpoint with required fields.
+            response = await axios.post("http://localhost:8000/signup", {
                fullName: formData.fullName,
                email: formData.email,
                username: formData.username,
                password: formData.password,
                confirmPassword: formData.confirmPassword,
             });
+
             console.log("Signup Successful:", response.data);
          }
          // Redirect to Home page on successful login/sign up.
@@ -56,7 +57,7 @@ const Login = () => {
          );
          // Set the error message to display to the user.
          setErrorMessage(
-            error.response ? error.response.data.message : "An 3error occurred."
+            error.response ? error.response.data.message : "An error occurred."
          );
       }
    };
