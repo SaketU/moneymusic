@@ -13,6 +13,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Header from "./components/Common/Header";
 import { UserProvider } from "./UserContext"; // Import your UserProvider
+import UserProfile from "./pages/UserProfile";
 
 function App() {
    const theme = createTheme({
@@ -43,13 +44,13 @@ function App() {
                         }
                      />
                      <Route
-                      path="/artist/:id"
-                      element={
-                        <ProtectedRoute>
-                          <Coin />
-                        </ProtectedRoute>
-                      }
-                    />
+                        path="/artist/:id"
+                        element={
+                           <ProtectedRoute>
+                              <Coin />
+                           </ProtectedRoute>
+                        }
+                     />
 
                      <Route
                         path="/compare"
@@ -67,6 +68,15 @@ function App() {
                            </ProtectedRoute>
                         }
                      />
+                     <Route
+                        path="/profile"
+                        element={
+                           <ProtectedRoute>
+                              <UserProfile />
+                           </ProtectedRoute>
+                        }
+                     />
+
                      <Route path="/login" element={<Login />} />
                   </Routes>
                </BrowserRouter>

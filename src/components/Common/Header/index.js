@@ -73,8 +73,8 @@ function Header() {
             <Link to="/">
                <p className="link">Home</p>
             </Link>
-            <Link to="/compare">
-               <p className="link">Compare</p>
+            <Link to="/profile">
+               <p className="link">Profile</p>
             </Link>
             <Link to="/watchlist">
                <p className="link">Market</p>
@@ -85,9 +85,7 @@ function Header() {
 
             {user ? (
                <>
-                  <span className="user-info">
-                     Balance: ${user.balance}
-                  </span>
+                  <span className="user-info">Balance: ${user.balance}</span>
                   <Button text={"Logout"} onClick={logout} />
                </>
             ) : (
