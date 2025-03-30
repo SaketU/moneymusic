@@ -16,6 +16,7 @@ const { Server } = require("socket.io");
 const Order = require("./models/order.model");
 const Stock = require("./models/stock.model");
 const Trade = require("./models/trade.model");
+const AlbumCover = require("./models/albumCover.model");
 
 mongoose
    .connect(config.connectionString)
@@ -538,6 +539,15 @@ app.get("/tickets", async (req, res) => {
       console.error("Error fetching tickets:", error);
       res.status(500).json({ error: true, message: "Server error" });
    }
+});
+app.get("/albums", async (req, res) => {
+  try {
+    const albums = await AlbumCover.find({});
+    res.status(200).json(albums);
+  } catch (error) {
+    console.error("Error fetching album covers:", error);
+    res.status(500).json({ error: true, message: "Server error" });
+  }
 });
 
 server.listen(8000, () => console.log("Server running on port 8000"));

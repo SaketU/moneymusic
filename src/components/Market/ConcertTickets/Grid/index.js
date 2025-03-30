@@ -5,17 +5,16 @@ import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import StarIcon from "@mui/icons-material/Star";
 import { saveItemToWatchlist } from "../../../../functions/saveItemToWatchlist";
 import { removeItemToWatchlist } from "../../../../functions/removeItemToWatchlist";
+import BuyButton from "../../../BuyButton"; // Adjust path if needed
 
 function Grid({ ticket, delay }) {
   // Use ticket.id if available, otherwise fallback to ticket._id
   const ticketId = ticket.id || ticket._id;
 
   const watchlist = JSON.parse(localStorage.getItem("watchlist")) || [];
-  const [isTicketAdded, setIsTicketAdded] = useState(
-    watchlist.includes(ticketId)
-  );
+  const [isTicketAdded, setIsTicketAdded] = useState(watchlist.includes(ticketId));
 
-  // Debug: log and print ticket data
+  // Debug: log ticket data
   useEffect(() => {
     console.log("Ticket object in Grid:", ticketId);
   }, [ticketId]);
@@ -64,6 +63,10 @@ function Grid({ ticket, delay }) {
           }}
         >
           {isTicketAdded ? <StarIcon /> : <StarOutlineIcon />}
+        </div>
+        {/* Buy Button */}
+        <div className="buy-button-container">
+          <BuyButton item={ticket} type="ticket" />
         </div>
       </motion.div>
     </a>

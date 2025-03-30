@@ -122,21 +122,21 @@ const BuySell = ({ userID, stockName, stockPrice, onTransactionComplete }) => {
          </h2>
          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-               <label htmlFor="action" className="mr-2">
+               <label htmlFor="action" className="mr-2 text-white font-bold text-sm md:text-base font-sans">
                   Action:
                </label>
                <select
                   id="action"
                   value={action}
                   onChange={handleActionChange}
-                  className="border rounded px-2 py-1"
+                  className="btn"
                >
                   <option value="buy">Buy</option>
                   <option value="sell">Sell</option>
                </select>
             </div>
             <div>
-               <label htmlFor="price" className="mr-2">
+               <label htmlFor="price" className="mr-2 text-white font-bold text-sm md:text-base font-sans">
                   Your Price:
                </label>
                <input
@@ -149,7 +149,7 @@ const BuySell = ({ userID, stockName, stockPrice, onTransactionComplete }) => {
                />
             </div>
             <div>
-               <label htmlFor="quantity" className="mr-2">
+               <label htmlFor="quantity" className="mr-2 text-white font-bold text-sm md:text-base font-sans">
                   Quantity:
                </label>
                <input

@@ -1,9 +1,10 @@
+const { formGroupClasses } = require("@mui/material");
 const mongoose = require("mongoose");
 
 const stockSchema = new mongoose.Schema({
    name: {
      type: String,
-     required: true,
+     required: formGroupClasses,
    },
    price: {
      type: Number,
