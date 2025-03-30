@@ -13,7 +13,17 @@ mongoose.connect(config.connectionString);
 
 const app = express();
 app.use(express.json());
-app.use(cors({ origin: "*" }));
+app.use(cors({ origin: "http://localhost:3000" }));
+
+app.get("/artists", async (req, res) => {
+   try {
+      const artists = await Artist.find({});
+      res.status(200).json(artists);
+   } catch (error) {
+      console.error("Error fetching artists:", error);
+      res.status(500).json({ error: true, message: "Server error" });
+   }
+});
 
 // Sign Up Route (Save user to the database)
 app.post("/signup", async (req, res) => {
