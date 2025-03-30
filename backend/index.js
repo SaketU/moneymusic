@@ -5,21 +5,40 @@ const bcrypt = require("bcryptjs");
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
-const { authenticateToken } = require("./utils/utilities");
+
 const User = require("./models/user.model");
 const validator = require("validator");
 const Artist = require("./models/artist.model");
+const cookieParser = require("cookie-parser");
 
-mongoose.connect(config.connectionString)
-  .then(() => console.log("Connected to MongoDB"))
-  .catch(err => console.error("MongoDB connection error:", err));
+mongoose
+   .connect(config.connectionString)
+   .then(() => console.log("Connected to MongoDB"))
+   .catch((err) => console.error("MongoDB connection error:", err));
 
 const app = express();
+app.use(cookieParser());
 app.use(express.json());
-app.use(cors({ origin: "http://localhost:3000" }));
+app.use(
+   cors({
+      origin: "http://localhost:3000",
+      credentials: true, // Allows sending cookies and tokens
+   })
+);
 
 // ------------------ Public Endpoints ------------------
 
+const authenticateToken = (req, res, next) => {
+   const token = req.cookies.token; // Read the token from the cookie
+
+   if (!token) return res.sendStatus(401); // No token found, unauthorized
+
+   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+      if (err) return res.sendStatus(403); // Invalid token, forbidden
+      req.user = user; // Attach user data to request
+      next();
+   });
+};
 // Sign Up Route (Save user to the database)
 app.post("/signup", async (req, res) => {
    console.log("POST /signup called");
@@ -39,7 +58,9 @@ app.post("/signup", async (req, res) => {
 
    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
    if (existingUser) {
-      return res.status(400).json({ message: "User already exists with that email or username" });
+      return res
+         .status(400)
+         .json({ message: "User already exists with that email or username" });
    }
 
    try {
@@ -59,12 +80,23 @@ app.post("/signup", async (req, res) => {
          { expiresIn: "72h" }
       );
 
-      return res.status(200).json({
-         error: false,
-         message: "Account created successfully",
-         user: { fullName: user.fullName, email: user.email, username: user.username },
-         accessToken,
-      });
+      return res
+         .status(200)
+         .cookie("token", accessToken, {
+            httpOnly: true,
+            secure: false, // Set to true if using HTTPS
+            sameSite: "lax", // Adjust this based on your needs
+            maxAge: 72 * 60 * 60 * 1000, // 72 hours
+         })
+         .json({
+            error: false,
+            message: "Account created successfully",
+            user: {
+               fullName: user.fullName,
+               email: user.email,
+               username: user.username,
+            },
+         });
    } catch (error) {
       console.error("Error creating account:", error);
       return res.status(500).json({ message: "Server error" });
@@ -77,7 +109,9 @@ app.post("/login", async (req, res) => {
    const { email, password } = req.body;
 
    if (!email || !password) {
-      return res.status(400).json({ message: "Email and Password are required" });
+      return res
+         .status(400)
+         .json({ message: "Email and Password are required" });
    }
 
    const query = validator.isEmail(email) ? { email } : { username: email };
@@ -97,25 +131,34 @@ app.post("/login", async (req, res) => {
       { expiresIn: "72h" }
    );
 
-   return res.json({
-      error: false,
-      message: "Login Successful",
-      user: { fullName: user.fullName, email: user.email },
-      accessToken,
-   });
+   return res
+      .status(200)
+      .cookie("token", accessToken, {
+         httpOnly: true,
+         secure: false, // Set to true if using HTTPS
+         sameSite: "lax",
+         maxAge: 72 * 60 * 60 * 1000, // 72 hours
+      })
+      .json({
+         error: false,
+         message: "Login Successful",
+         user: { fullName: user.fullName, email: user.email },
+      });
 });
 
 // ------------------ Protected Endpoints ------------------
 
 // Get user details (Protected)
+
 app.get("/get-user", authenticateToken, async (req, res) => {
-   console.log("GET /get-user called");
-   const { userId } = req.user;
-   const isUser = await User.findOne({ _id: userId });
-   if (!isUser) {
-      return res.sendStatus(401);
+   try {
+      const user = await User.findById(req.user.userId);
+      if (!user) return res.sendStatus(404);
+
+      res.status(200).json({ message: "Authenticated", user });
+   } catch (error) {
+      res.status(500).json({ message: "Server error" });
    }
-   return res.json({ user: isUser, message: "" });
 });
 
 // Get all artists (Protected)

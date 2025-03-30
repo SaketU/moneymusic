@@ -1,17 +1,38 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
+import axios from "axios";
 
 const ProtectedRoute = ({ children }) => {
-  // Retrieve token from localStorage (adjust key as needed)
-  const token = localStorage.getItem("accessToken");
+   const [isAuthenticated, setIsAuthenticated] = useState(null); // null means loading state
 
-  // If no token is found, redirect to login
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
+   useEffect(() => {
+      const checkAuth = async () => {
+         try {
+            const response = await axios.get("http://localhost:8000/get-user", {
+               withCredentials: true, // Allow sending cookies
+            });
 
-  // Otherwise, render the protected component
-  return children;
+            if (response.status === 200) {
+               setIsAuthenticated(true); // User is authenticated
+            }
+         } catch (error) {
+            console.error("User not authenticated", error);
+            setIsAuthenticated(false); // User is not authenticated
+         }
+      };
+
+      checkAuth();
+   }, []);
+
+   if (isAuthenticated === null) {
+      return <div>Loading...</div>; // Render a loading screen while checking auth status
+   }
+
+   if (!isAuthenticated) {
+      return <Navigate to="/login" replace />;
+   }
+
+   return children;
 };
 
 export default ProtectedRoute;

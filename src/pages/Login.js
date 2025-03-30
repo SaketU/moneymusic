@@ -19,6 +19,20 @@ const Login = () => {
       confirmPassword: "",
    });
 
+   const getUser = async () => {
+      try {
+         const response = await axios.get("http://localhost:8000/get-user", {
+            withCredentials: true, // Important for sending cookies
+         });
+         console.log("User Data:", response.data);
+      } catch (error) {
+         console.error(
+            "Error Fetching User Data:",
+            error.response ? error.response.data : error.message
+         );
+      }
+   };
+
    // Handle input changes for all fields.
    const handleInputChange = (e) => {
       setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -31,10 +45,14 @@ const Login = () => {
          let response;
          if (isLogin) {
             // Login: call the /login endpoint with email and password.
-            response = await axios.post("http://localhost:8000/login", {
-               email: formData.email,
-               password: formData.password,
-            });
+            response = await axios.post(
+               "http://localhost:8000/login",
+               {
+                  email: formData.email,
+                  password: formData.password,
+               },
+               { withCredentials: true }
+            );
             console.log("Login Successful:", response.data);
          } else {
             // Sign Up: call the /signup endpoint with required fields.
