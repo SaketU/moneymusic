@@ -10,6 +10,15 @@ const userSchema = new Schema(
       password: { type: String, required: true }, // Password should be required if signing up
       createdOn: { type: Date, default: Date.now },
       balance: { type: Number, default: 0 },
+      stocks: [
+         {
+            stockId: {
+               type: Schema.Types.ObjectId,
+               ref: "Stock",
+               required: true,
+            },
+         },
+      ],
    },
    { collection: "Users" }
 );
