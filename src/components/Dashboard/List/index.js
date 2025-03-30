@@ -19,19 +19,38 @@ function List({ artist, delay }) {
         whileInView={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5, delay: delay }}
       >
-        <Tooltip title="Artist Name">
+        <Tooltip title="Artist Image">
+          <td className="td-img">
+            <img
+              src={artist.artist_image}
+              alt={artist.Artist}
+              className="artist-image-td"
+              style={{
+                width: "60px",
+                height: "60px",
+                objectFit: "cover",
+                borderRadius: "50%",
+              }}
+            />
+          </td>
+        </Tooltip>
+        <Tooltip title="Artist Info" placement="bottom-start">
           <td className="td-info">
             <div className="info-flex">
               <p className="artist-name td-p">{artist.Artist}</p>
+              <p className="artist-followers td-p">
+                Followers: {artist.Followers.toLocaleString()}
+              </p>
             </div>
           </td>
         </Tooltip>
-        <Tooltip title="Total Followers">
-          <td className="td-followers">
-            {artist.Followers.toLocaleString()}
-          </td>
-        </Tooltip>
-        {/* Additional columns (like monthly data) can be added here */}
+        {artist.stock_price && (
+          <Tooltip title="Stock Price" placement="bottom-end">
+            <td className="td-stock">
+              ${parseFloat(artist.stock_price).toFixed(2)}
+            </td>
+          </Tooltip>
+        )}
         <td
           className="watchlist-icon"
           onClick={(e) => {

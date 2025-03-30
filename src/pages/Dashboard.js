@@ -14,6 +14,7 @@ function Dashboard() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     getData();
@@ -23,10 +24,9 @@ function Dashboard() {
   const getData = () => {
     setLoading(true);
     axios
-      .get(`http://localhost:8000/artists`)
+      .get("http://localhost:8000/artists")
       .then((response) => {
         console.log("Backend RESPONSE>>>", response.data);
-        // Since the endpoint returns a simple array, use that directly
         setArtists(response.data);
         setTotal(response.data.length);
         setLoading(false);
@@ -39,18 +39,24 @@ function Dashboard() {
 
   const handleChange = (e) => {
     setSearch(e.target.value);
+    setPage(1); // Reset to page 1 when search changes
     console.log(e.target.value);
   };
 
-  // Filter artists locally if search term is provided
+  // Filter artists locally if a search term is provided
   const filteredArtists = artists.filter((artist) =>
     artist.Artist.toLowerCase().includes(search.trim().toLowerCase())
   );
 
-  // Handler for page change (if you plan to paginate the list on the frontend)
+  // Paginate the list—if searching, show the entire filtered list; otherwise, only the current page
+  const paginatedArtists = (search ? filteredArtists : artists).slice(
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage
+  );
+
+  // Handler for page change
   const handlePageChange = (event, value) => {
     setPage(value);
-    // You can further paginate your artists array here if needed
   };
 
   return (
@@ -61,9 +67,9 @@ function Dashboard() {
       ) : (
         <>
           <Search search={search} handleChange={handleChange} />
-          {/* Pass filtered artists if a search term exists, else pass all artists */}
-          <TabsComponent artists={search ? filteredArtists : artists} setSearch={setSearch} />
-          {/* Show pagination only when no search filter is applied */}
+          {/* Show the paginated or filtered list in the Tabs component */}
+          <TabsComponent artists={search ? filteredArtists : paginatedArtists} setSearch={setSearch} />
+          {/* Show pagination only when no search filter is active */}
           {!search && (
             <PaginationComponent
               page={page}
@@ -71,8 +77,10 @@ function Dashboard() {
               handlePageChange={handlePageChange}
             />
           )}
-          {/* Debug: Print the artists data received */}
-          
+          {/* For debugging purposes—remove when not needed */}
+          <pre style={{ background: "#f4f4f4", padding: "1rem", marginTop: "1rem" }}>
+            {JSON.stringify(paginatedArtists, null, 2)}
+          </pre>
         </>
       )}
       <TopButton />

@@ -10,56 +10,40 @@ const User = require("./models/user.model");
 const validator = require("validator");
 const Artist = require("./models/artist.model");
 
-
-mongoose.connect(config.connectionString);
+mongoose.connect(config.connectionString)
+  .then(() => console.log("Connected to MongoDB"))
+  .catch(err => console.error("MongoDB connection error:", err));
 
 const app = express();
 app.use(express.json());
 app.use(cors({ origin: "http://localhost:3000" }));
 
-app.get("/artists", async (req, res) => {
-   try {
-      const artists = await Artist.find({});
-      res.status(200).json(artists);
-   } catch (error) {
-      console.error("Error fetching artists:", error);
-      res.status(500).json({ error: true, message: "Server error" });
-   }
-});
+// ------------------ Public Endpoints ------------------
 
 // Sign Up Route (Save user to the database)
 app.post("/signup", async (req, res) => {
-   console.log("POST /signup called"); // Log endpoint call
+   console.log("POST /signup called");
    const { fullName, email, username, password, confirmPassword } = req.body;
 
-   // Validate required fields
    if (!fullName || !email || !username || !password || !confirmPassword) {
       return res.status(400).json({ message: "Please enter all fields" });
    }
 
-   // Validate email format
    if (!validator.isEmail(email)) {
       return res.status(400).json({ message: "Invalid email" });
    }
 
-   // Ensure both password fields match
    if (password !== confirmPassword) {
       return res.status(400).json({ message: "Passwords do not match" });
    }
 
-   // Check if the email or username is already in use
    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
    if (existingUser) {
-      return res
-         .status(400)
-         .json({ message: "User already exists with that email or username" });
+      return res.status(400).json({ message: "User already exists with that email or username" });
    }
 
    try {
-      // Hash the password
       const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Create a new user
       const user = new User({
          fullName,
          email,
@@ -69,7 +53,6 @@ app.post("/signup", async (req, res) => {
 
       await user.save();
 
-      // Generate a JWT token for the new user
       const accessToken = jwt.sign(
          { userId: user._id },
          process.env.ACCESS_TOKEN_SECRET,
@@ -79,11 +62,7 @@ app.post("/signup", async (req, res) => {
       return res.status(200).json({
          error: false,
          message: "Account created successfully",
-         user: {
-            fullName: user.fullName,
-            email: user.email,
-            username: user.username,
-         },
+         user: { fullName: user.fullName, email: user.email, username: user.username },
          accessToken,
       });
    } catch (error) {
@@ -92,40 +71,32 @@ app.post("/signup", async (req, res) => {
    }
 });
 
+// Login Route
 app.post("/login", async (req, res) => {
-   console.log("POST /login called"); // Log endpoint call
+   console.log("POST /login called");
    const { email, password } = req.body;
 
    if (!email || !password) {
-      return res
-         .status(400)
-         .json({ message: "Email and Password are requiured" });
+      return res.status(400).json({ message: "Email and Password are required" });
    }
 
-   const query = validator.isEmail(email)
-      ? { email: email }
-      : { username: email };
-
-   // Looks for user email
+   const query = validator.isEmail(email) ? { email } : { username: email };
    const user = await User.findOne(query);
    if (!user) {
       return res.status(400).json({ message: "User not found" });
    }
 
-   // Validates password
    const isPasswordValid = await bcrypt.compare(password, user.password);
    if (!isPasswordValid) {
       return res.status(400).json({ message: "Invalid Password" });
    }
 
-   // Gets access token from login
    const accessToken = jwt.sign(
       { userId: user._id },
       process.env.ACCESS_TOKEN_SECRET,
       { expiresIn: "72h" }
    );
 
-   // Successful login
    return res.json({
       error: false,
       message: "Login Successful",
@@ -134,33 +105,32 @@ app.post("/login", async (req, res) => {
    });
 });
 
+// ------------------ Protected Endpoints ------------------
+
+// Get user details (Protected)
 app.get("/get-user", authenticateToken, async (req, res) => {
-   console.log("GET /get-user called"); // Log endpoint call
+   console.log("GET /get-user called");
    const { userId } = req.user;
-
    const isUser = await User.findOne({ _id: userId });
-
    if (!isUser) {
       return res.sendStatus(401);
    }
-
-   return res.json({
-      user: isUser,
-      message: "",
-   });
-});
-app.get('/artists', async (req, res) => {
-  try {
-    const artists = await Artist.find({});
-    res.status(200).json(artists);
-  } catch (error) {
-    console.error("Error fetching artists:", error);
-    res.status(500).json({ error: true, message: "Server error" });
-  }
+   return res.json({ user: isUser, message: "" });
 });
 
+// Get all artists (Protected)
+app.get("/artists", authenticateToken, async (req, res) => {
+   try {
+      const artists = await Artist.find({});
+      res.status(200).json(artists);
+   } catch (error) {
+      console.error("Error fetching artists:", error);
+      res.status(500).json({ error: true, message: "Server error" });
+   }
+});
 
 app.listen(8000, () => {
    console.log("Server is running on port 8000");
 });
+
 module.exports = app;

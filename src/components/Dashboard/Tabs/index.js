@@ -37,7 +37,7 @@ export default function TabsComponent({ artists, setSearch }) {
         <div className="grid-flex">
           {artists.length > 0 ? (
             artists.map((artist, i) => (
-              <Grid artist={artist} key={i} delay={(i % 4) * 0.2} />
+              <Grid artist={artist} key={artist._id} delay={(i % 4) * 0.2} />
             ))
           ) : (
             <div>
@@ -61,7 +61,7 @@ export default function TabsComponent({ artists, setSearch }) {
         <table className="list-flex">
           {artists.length > 0 ? (
             artists.map((artist, i) => (
-              <List artist={artist} key={i} delay={(i % 8) * 0.2} />
+              <List artist={artist} key={artist._id} delay={(i % 8) * 0.2} />
             ))
           ) : (
             <div>

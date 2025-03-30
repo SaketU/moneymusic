@@ -7,24 +7,44 @@ import { saveItemToWatchlist } from "../../../functions/saveItemToWatchlist";
 import { removeItemToWatchlist } from "../../../functions/removeItemToWatchlist";
 
 function Grid({ artist, delay }) {
-  // Use localStorage watchlist (list of artist IDs)
   const watchlist = JSON.parse(localStorage.getItem("watchlist"));
-  const [isArtistAdded, setIsArtistAdded] = useState(watchlist?.includes(artist._id));
+  const [isArtistAdded, setIsArtistAdded] = useState(
+    watchlist?.includes(artist._id)
+  );
 
   return (
     <a href={`/artist/${artist._id}`}>
       <motion.div
-        className="grid"
+        className="grid grid-artist"
         initial={{ opacity: 0, y: 50 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: delay }}
       >
-        <div className="info-flex">
+        {/* Image on top */}
+        <div className="artist-image-container">
+          <img
+            src={artist.artist_image}
+            alt={artist.Artist}
+            className="artist-image"
+          />
+        </div>
+        {/* Artist Details */}
+        <div className="artist-info">
           <p className="artist-name">{artist.Artist}</p>
+          {artist.stock_price && (
+            <p className="artist-price">
+              Price: ${parseFloat(artist.stock_price).toLocaleString()}
+            </p>
+          )}
           <p className="artist-followers">
-            Followers: {artist.Followers.toLocaleString()}
+            Followers: {artist.Followers?.toLocaleString() || "N/A"}
+          </p>
+          <p className="artist-listeners">
+            Monthly Listeners:{" "}
+            {artist.monthlyListeners?.toLocaleString() || "N/A"}
           </p>
         </div>
+        {/* Watchlist Icon */}
         <div
           className="watchlist-icon"
           onClick={(e) => {
