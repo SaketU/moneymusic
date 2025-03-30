@@ -45,22 +45,33 @@ const Login = () => {
       try {
          let response;
          if (isLogin) {
-            response = await axios.post("http://localhost:8000/login", {
-               email: formData.email,
-               password: formData.password,
-            });
+            response = await axios.post(
+               "http://localhost:8000/login",
+               {
+                  email: formData.email,
+                  password: formData.password,
+               },
+               { withCredentials: true }
+            );
+
             console.log("Login Successful:", response.data);
+            navigate("/dashboard"); // Redirect to dashboard instead of reloading
          } else {
-            response = await axios.post("http://localhost:8000/signup", {
-               fullName: formData.fullName,
-               email: formData.email,
-               username: formData.username,
-               password: formData.password,
-               confirmPassword: formData.confirmPassword,
-            });
+            response = await axios.post(
+               "http://localhost:8000/signup",
+               {
+                  fullName: formData.fullName,
+                  email: formData.email,
+                  username: formData.username,
+                  password: formData.password,
+                  confirmPassword: formData.confirmPassword,
+               },
+               { withCredentials: true }
+            );
+
             console.log("Signup Successful:", response.data);
+            navigate("/dashboard"); // Redirect to dashboard after signup
          }
-         navigate("/");
       } catch (error) {
          console.error(
             "Error:",

@@ -145,6 +145,15 @@ app.post("/login", async (req, res) => {
          user: { fullName: user.fullName, email: user.email },
       });
 });
+// Logout Route
+app.post("/logout", (req, res) => {
+   res.clearCookie("token", {
+      httpOnly: true,
+      secure: false, // Set to true if using HTTPS
+      sameSite: "lax",
+   });
+   return res.status(200).json({ message: "Logout successful" });
+});
 
 // ------------------ Protected Endpoints ------------------
 

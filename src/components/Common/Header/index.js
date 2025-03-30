@@ -43,18 +43,22 @@ function Header() {
       document.documentElement.setAttribute("data-theme", "light");
    };
 
-   const handleLogout = async () => {
+   const logout = async () => {
       try {
-         await axios.post(
-            "http://localhost:8000/logout",
-            {},
-            { withCredentials: true }
-         );
-         setUser(null); // Clear user data upon logout
-         toast.success("Logged out successfully!");
+         const response = await fetch("http://localhost:8000/logout", {
+            method: "POST",
+            credentials: "include", // Important to include cookies in the request
+         });
+
+         if (response.ok) {
+            console.log("Logout successful");
+            // Optionally, redirect the user to the login page
+            window.location.href = "/login";
+         } else {
+            console.error("Logout failed");
+         }
       } catch (error) {
-         console.error("Logout failed:", error);
-         toast.error("Logout failed. Please try again.");
+         console.error("Error during logout:", error);
       }
    };
 
@@ -84,7 +88,7 @@ function Header() {
                   <span className="user-info">
                      Welcome, {user.fullName}! - Balance: ${user.balance}
                   </span>
-                  <Button text={"Logout"} onClick={handleLogout} />
+                  <Button text={"Logout"} onClick={logout} />
                </>
             ) : (
                <Link to="/login">
