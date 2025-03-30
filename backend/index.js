@@ -36,7 +36,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
    cors: {
-      origin: "http://localhost:3000",
+      origin: "http://localhost:3001",
       credentials: true,
    },
 });
@@ -44,7 +44,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
    cors({
-      origin: "http://localhost:3000",
+      origin: "http://localhost:3001",
       credentials: true, // Allows sending cookies and tokens
    })
 );
