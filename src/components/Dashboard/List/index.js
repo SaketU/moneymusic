@@ -26,8 +26,8 @@ function List({ artist, delay }) {
               alt={artist.Artist}
               className="artist-image-td"
               style={{
-                width: "60px",
-                height: "60px",
+                width: "80px",
+                height: "80px",
                 objectFit: "cover",
                 borderRadius: "50%",
               }}

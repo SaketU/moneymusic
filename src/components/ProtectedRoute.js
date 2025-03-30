@@ -2,10 +2,10 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 
 const ProtectedRoute = ({ children }) => {
-  // Retrieve token from localStorage (or from your state management)
+  // Retrieve token from localStorage (adjust key as needed)
   const token = localStorage.getItem("accessToken");
 
-  // If there's no token, redirect to login
+  // If no token is found, redirect to login
   if (!token) {
     return <Navigate to="/login" replace />;
   }
