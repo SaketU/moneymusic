@@ -1,200 +1,250 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom"; // import useNavigate for redirection
+import { useNavigate } from "react-router-dom";
 import Header from "../components/Common/Header";
 
 const Login = () => {
-   // State to toggle between login and sign up
-   const [isLogin, setIsLogin] = useState(true);
-   // State to hold error messages
-   const [errorMessage, setErrorMessage] = useState("");
-   const navigate = useNavigate();
+  // Initialize darkMode based on localStorage or the current data-theme attribute.
+  const [darkMode, setDarkMode] = useState(
+    localStorage.getItem("theme") === "dark"
+  );
 
-   // Manage form fields in a single object.
-   const [formData, setFormData] = useState({
-      fullName: "",
-      email: "",
-      username: "",
-      password: "",
-      confirmPassword: "",
-   });
+  const navigate = useNavigate();
 
-   const getUser = async () => {
-      try {
-         const response = await axios.get("http://localhost:8000/get-user", {
-            withCredentials: true, // Important for sending cookies
-         });
-         console.log("User Data:", response.data);
-      } catch (error) {
-         console.error(
-            "Error Fetching User Data:",
-            error.response ? error.response.data : error.message
-         );
+  const [isLogin, setIsLogin] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    username: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  // Update darkMode when the data-theme attribute changes
+  useEffect(() => {
+    const observer = new MutationObserver((mutationsList) => {
+      for (const mutation of mutationsList) {
+        if (mutation.attributeName === "data-theme") {
+          const newTheme = document.documentElement.getAttribute("data-theme");
+          setDarkMode(newTheme === "dark");
+        }
       }
-   };
+    });
+    observer.observe(document.documentElement, { attributes: true });
+    return () => observer.disconnect();
+  }, []);
 
-   // Handle input changes for all fields.
-   const handleInputChange = (e) => {
-      setFormData({ ...formData, [e.target.name]: e.target.value });
-   };
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-   // Handle form submission.
-   const handleSubmit = async (e) => {
-      e.preventDefault();
-      try {
-         let response;
-         if (isLogin) {
-            // Login: call the /login endpoint with email and password.
-            response = await axios.post(
-               "http://localhost:8000/login",
-               {
-                  email: formData.email,
-                  password: formData.password,
-               },
-               { withCredentials: true }
-            );
-            console.log("Login Successful:", response.data);
-         } else {
-            // Sign Up: call the /signup endpoint with required fields.
-            response = await axios.post("http://localhost:8000/signup", {
-               fullName: formData.fullName,
-               email: formData.email,
-               username: formData.username,
-               password: formData.password,
-               confirmPassword: formData.confirmPassword,
-            });
-
-            console.log("Signup Successful:", response.data);
-         }
-         // Redirect to Home page on successful login/sign up.
-         navigate("/");
-      } catch (error) {
-         console.error(
-            "Error:",
-            error.response ? error.response.data.message : error.message
-         );
-         // Set the error message to display to the user.
-         setErrorMessage(
-            error.response ? error.response.data.message : "An error occurred."
-         );
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      let response;
+      if (isLogin) {
+        response = await axios.post("http://localhost:8000/login", {
+          email: formData.email,
+          password: formData.password,
+        });
+        console.log("Login Successful:", response.data);
+      } else {
+        response = await axios.post("http://localhost:8000/signup", {
+          fullName: formData.fullName,
+          email: formData.email,
+          username: formData.username,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+        });
+        console.log("Signup Successful:", response.data);
       }
-   };
+      navigate("/");
+    } catch (error) {
+      console.error(
+        "Error:",
+        error.response ? error.response.data.message : error.message
+      );
+      setErrorMessage(
+        error.response ? error.response.data.message : "An error occurred."
+      );
+    }
+  };
 
-   return (
-      <div>
-         <Header />
-         <div
-            className="auth-container"
-            style={{ maxWidth: "400px", margin: "2rem auto" }}
-         >
-            <h2 style={{ textAlign: "center" }}>
-               {isLogin ? "Login" : "Sign Up"}
-            </h2>
-            {/* Display error message if any */}
-            {errorMessage && (
-               <p style={{ textAlign: "center", color: "red" }}>
-                  {errorMessage}
-               </p>
-            )}
-            <form onSubmit={handleSubmit}>
-               {/* For sign up, show additional fields */}
-               {!isLogin && (
-                  <>
-                     <div className="input-group">
-                        <label htmlFor="fullName">Full Name</label>
-                        <input
-                           type="text"
-                           id="fullName"
-                           name="fullName"
-                           value={formData.fullName}
-                           onChange={handleInputChange}
-                           placeholder="Your full name"
-                           required
-                        />
-                     </div>
-                     <div className="input-group">
-                        <label htmlFor="username">Username</label>
-                        <input
-                           type="text"
-                           id="username"
-                           name="username"
-                           value={formData.username}
-                           onChange={handleInputChange}
-                           placeholder="Username"
-                           required
-                        />
-                     </div>
-                  </>
-               )}
-               <div className="input-group">
-                  <label htmlFor="email">Email</label>
-                  <input
-                     type="email"
-                     id="email"
-                     name="email"
-                     value={formData.email}
-                     onChange={handleInputChange}
-                     placeholder="Email"
-                     required
-                  />
-               </div>
-               <div className="input-group">
-                  <label htmlFor="password">Password</label>
-                  <input
-                     type="password"
-                     id="password"
-                     name="password"
-                     value={formData.password}
-                     onChange={handleInputChange}
-                     placeholder="Password"
-                     required
-                  />
-               </div>
-               {!isLogin && (
-                  <div className="input-group">
-                     <label htmlFor="confirmPassword">Confirm Password</label>
-                     <input
-                        type="password"
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        placeholder="Confirm Password"
-                        required
-                     />
-                  </div>
-               )}
-               <div style={{ textAlign: "center", margin: "1rem 0" }}>
-                  <button
-                     type="submit"
-                     style={{ padding: "0.5rem 1rem", cursor: "pointer" }}
-                  >
-                     {isLogin ? "Login" : "Sign Up"}
-                  </button>
-               </div>
-            </form>
-            <p style={{ textAlign: "center" }}>
-               {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-               <button
-                  type="button"
-                  onClick={() => {
-                     console.log("Toggle Clicked!"); // Check if this logs
-                     setIsLogin(!isLogin);
-                     setErrorMessage(""); // Clear error message on toggle.
-                  }}
-                  style={{
-                     background: "none",
-                     border: "none",
-                     color: "blue",
-                     cursor: "pointer",
-                  }}
-               >
-                  {isLogin ? "Sign Up" : "Login"}
-               </button>
-            </p>
-         </div>
+  // Define styles based on darkMode.
+  const containerStyle = {
+    maxWidth: "400px",
+    margin: "2rem auto",
+    padding: "2rem",
+    borderRadius: "8px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+    backgroundColor: darkMode ? "#1a1a1a" : "#fff",
+    color: darkMode ? "#fff" : "#111",
+  };
+
+  const headingStyle = {
+    textAlign: "center",
+    marginBottom: "1.5rem",
+    color: darkMode ? "#b583ff" : "#8e44ad",
+  };
+
+  const inputGroupStyle = {
+    marginBottom: "1rem",
+    display: "flex",
+    flexDirection: "column",
+  };
+
+  const labelStyle = {
+    marginBottom: "0.5rem",
+    fontWeight: "bold",
+  };
+
+  const inputStyle = {
+    padding: "0.75rem",
+    borderRadius: "4px",
+    fontSize: "1rem",
+    border: darkMode ? "1px solid #555" : "1px solid #ddd",
+    backgroundColor: darkMode ? "#333" : "#fff",
+    color: darkMode ? "#fff" : "#111",
+  };
+
+  const buttonStyle = {
+    width: "100%",
+    padding: "0.75rem",
+    borderRadius: "4px",
+    border: "none",
+    fontSize: "1rem",
+    cursor: "pointer",
+    transition: "background-color 0.3s ease",
+    backgroundColor: "#8e44ad",
+    color: "#fff",
+  };
+
+  const toggleButtonStyle = {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    textDecoration: "underline",
+    color: darkMode ? "#b583ff" : "#8e44ad",
+  };
+
+  const errorTextStyle = {
+    textAlign: "center",
+    color: "#f94141",
+    marginBottom: "1rem",
+  };
+
+  return (
+    <div>
+      <Header />
+      <div style={containerStyle}>
+        <h2 style={headingStyle}>{isLogin ? "Login" : "Sign Up"}</h2>
+        {errorMessage && <p style={errorTextStyle}>{errorMessage}</p>}
+        <form onSubmit={handleSubmit}>
+          {!isLogin && (
+            <>
+              <div style={inputGroupStyle}>
+                <label htmlFor="fullName" style={labelStyle}>
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  id="fullName"
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  placeholder="Your full name"
+                  style={inputStyle}
+                  required
+                />
+              </div>
+              <div style={inputGroupStyle}>
+                <label htmlFor="username" style={labelStyle}>
+                  Username
+                </label>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  placeholder="Username"
+                  style={inputStyle}
+                  required
+                />
+              </div>
+            </>
+          )}
+          <div style={inputGroupStyle}>
+            <label htmlFor="email" style={labelStyle}>
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              placeholder="Email"
+              style={inputStyle}
+              required
+            />
+          </div>
+          <div style={inputGroupStyle}>
+            <label htmlFor="password" style={labelStyle}>
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              placeholder="Password"
+              style={inputStyle}
+              required
+            />
+          </div>
+          {!isLogin && (
+            <div style={inputGroupStyle}>
+              <label htmlFor="confirmPassword" style={labelStyle}>
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                placeholder="Confirm Password"
+                style={inputStyle}
+                required
+              />
+            </div>
+          )}
+          <div style={{ textAlign: "center", margin: "1rem 0" }}>
+            <button type="submit" style={buttonStyle}>
+              {isLogin ? "Login" : "Sign Up"}
+            </button>
+          </div>
+        </form>
+        <p style={{ textAlign: "center" }}>
+          {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+          <button
+            type="button"
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setErrorMessage("");
+            }}
+            style={toggleButtonStyle}
+          >
+            {isLogin ? "Sign Up" : "Login"}
+          </button>
+        </p>
       </div>
-   );
+    </div>
+  );
 };
 
 export default Login;
