@@ -10,7 +10,7 @@ const userSchema = new Schema(
       password: { type: String, required: true }, // Password should be required if signing up
       createdOn: { type: Date, default: Date.now },
    },
-   { collection: "Artists.Users" }
+   { collection: "Users" }
 );
 
 module.exports = mongoose.model("User", userSchema);
