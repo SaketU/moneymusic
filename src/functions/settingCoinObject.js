@@ -1,14 +1,17 @@
 export const settingCoinObject = (data, setCoin) => {
+  const albumCount = data.albums ? data.albums.length : 0;
+  const latestSongsCount = data.latest_songs ? data.latest_songs.length : 0;
+  const formattedPrice = data.stock_price ? parseFloat(data.stock_price).toFixed(2) : "N/A";
+  const formattedFollowers = data.Followers ? data.Followers.toLocaleString() : "N/A";
+
+  // Construct a fallback description using available data.
+  const fallbackDesc = `${data.Artist || data.name || "Unknown Artist"} has a current stock price of $${formattedPrice}! They have ${albumCount} album${albumCount === 1 ? "" : "s"} available and ${formattedFollowers} followers on Spotify. ${latestSongsCount > 0 ? `They also have ${latestSongsCount} latest song${latestSongsCount === 1 ? "" : "s"} out! Would you like to listen to their most popular song?` : ""}`;
+
   setCoin({
     id: data.id || data._id, // Use data.id if available, otherwise _id
     name: data.name || data.Artist, // Use the 'name' field if available, otherwise 'Artist'
     image: data.artist_image || (data.image && data.image.large) || "", // Prefer artist_image
-    // For description, if there's no description provided, use a fallback that indicates album count if available
-    desc:
-      data.desc ||
-      (data.albums && data.albums.length
-        ? `This artist has ${data.albums.length} albums available.`
-        : "No description available."),
+    desc: data.desc || fallbackDesc, // Use data.desc if available, otherwise fallback
     // Map stock_price, followers, etc.
     stock_price: data.stock_price,
     Followers: data.Followers,

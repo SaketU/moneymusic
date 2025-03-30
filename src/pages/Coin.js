@@ -7,6 +7,7 @@ import ToggleComponents from "../components/CoinPage/ToggleComponent";
 import Button from "../components/Common/Button";
 import Loader from "../components/Common/Loader";
 import List from "../components/Dashboard/List";
+import AlbumCarousel from "../components/CoinPage/AlbumCarousel"; // <-- new import
 import { getCoinData } from "../functions/getCoinData";
 import { getPrices } from "../functions/getPrices";
 import { settingChartData } from "../functions/settingChartData";
@@ -94,7 +95,13 @@ function Coin() {
         <ToggleComponents priceType={priceType} handlePriceTypeChange={handlePriceTypeChange} />
         <LineChart chartData={chartData} />
       </div>
-      <Info title={coin.name} desc={coin.desc} />
+      <div className="grey-wrapper">
+        <Info title={coin.name} desc={coin.desc} />
+        {/* Render the AlbumCarousel below the description if albums exist */}
+        {coin.albums && coin.albums.length > 0 && (
+          <AlbumCarousel albums={coin.albums} />
+        )}
+      </div>
     </>
   );
 }

@@ -4,59 +4,62 @@ import pymongo
 from pymongo import MongoClient
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+import re
 
 def load_config():
     """
     Load configuration from backend/config.json.
     """
-    config_path = os.path.join("backend", "config.json")
+    base_path = os.path.dirname(__file__)
+    config_path = os.path.join(base_path, "config.json")
     with open(config_path, "r") as f:
         config = json.load(f)
     return config
 
-def get_previous_month_mmm_yyyy(date_str):
+def compute_stock_prices_array(doc):
     """
-    Given a date string in "Mon-YYYY" format (e.g., "Mar-2025"),
-    return the previous month in the same format (e.g., "Feb-2025").
-    """
-    dt = datetime.strptime(date_str, "%b-%Y")
-    prev_dt = dt - relativedelta(months=1)
-    return prev_dt.strftime("%b-%Y")
-
-def compute_stock_price(doc, target_month, previous_month):
-    """
-    Base price is determined by the Followers count:
+    Compute an array of [month, stock price] pairs for an artist.
+    
+    The initial stock price is based on the artist's Followers:
         base_price = Followers / SCALING_FACTOR_FOLLOWERS
-    Then, if monthly listener data is available for the target month and the previous month,
-    adjust the price based on the percentage change in monthly listeners.
     
-    Parameters:
-      doc: Dictionary for the artist document.
-      target_month: String in "Mon-YYYY" format (e.g., "Mar-2025").
-      previous_month: Previous month in the same format.
-    
-    Returns:
-      New stock price (float) or None if required data is missing.
+    For each month (extracted from keys in "Mon-YYYY" format),
+    the stock price is computed as:
+        price = base_price * (1 + percent_change * volatility_factor)
+    where:
+        percent_change = (current_listeners - previous_listeners) / previous_listeners
+        
+    Returns an array of two-element arrays in the order of the months.
     """
     followers = doc.get("Followers", 0)
-    current_listeners = doc.get(target_month)
-    prev_listeners = doc.get(previous_month)
-    
     SCALING_FACTOR_FOLLOWERS = 1_000_000
     base_price = followers / SCALING_FACTOR_FOLLOWERS
+    volatility_factor = 0.5
+
+    month_pattern = re.compile(r"^[A-Z][a-z]{2}-\d{4}$")
+    month_keys = [key for key in doc.keys() if month_pattern.match(key)]
     
-    if current_listeners is None:
-        print(f"Missing monthly listeners data for {target_month} for artist {doc.get('Artist', 'Unknown')}.")
-        return None
+    month_keys.sort(key=lambda x: datetime.strptime(x, "%b-%Y"))
+
+    stock_prices = []
+    if not month_keys:
+        return stock_prices
+
+    stock_prices.append([month_keys[0], base_price])
+
+    for i in range(1, len(month_keys)):
+        prev_key = month_keys[i - 1]
+        current_key = month_keys[i]
+        prev_listeners = doc.get(prev_key, 0)
+        current_listeners = doc.get(current_key, 0)
+        if not prev_listeners or prev_listeners == 0:
+            percent_change = 0
+        else:
+            percent_change = (current_listeners - prev_listeners) / prev_listeners
+        price = base_price * (1 + percent_change * volatility_factor)
+        stock_prices.append([current_key, price])
     
-    if not prev_listeners or prev_listeners == 0:
-        percent_change = 0
-    else:
-        percent_change = (current_listeners - prev_listeners) / prev_listeners
-    
-    volatility_factor = 0.5 
-    new_stock_price = base_price * (1 + percent_change * volatility_factor)
-    return new_stock_price
+    return stock_prices
 
 def main():
     config = load_config()
@@ -65,24 +68,23 @@ def main():
     if not uri:
         print("Database URI not found in config.")
         return
-    
+
     client = MongoClient(uri)
     db = client["Artists"]
     collection = db["ArtistsInfo"]
-    
-    target_month = "Mar-2025"
-    previous_month = get_previous_month_mmm_yyyy(target_month)
-    print(f"Computing stock prices for target month {target_month} (previous month: {previous_month})")
+
+    print("Computing stock prices array for each artist...")
     
     artists = collection.find({})
     for artist in artists:
         artist_name = artist.get("Artist", "Unknown Artist")
-        stock_price = compute_stock_price(artist, target_month, previous_month)
-        if stock_price is not None:
-            print(f"Artist: {artist_name} - Stock Price for {target_month}: {stock_price:.2f}")
-            collection.update_one({"_id": artist["_id"]}, {"$set": {"stock_price": stock_price}})
+        stock_prices_array = compute_stock_prices_array(artist)
+        if stock_prices_array:
+            formatted = ", ".join(f"{month}: {price:.2f}" for month, price in stock_prices_array)
+            print(f"Artist: {artist_name} - Stock Prices: {formatted}")
+            collection.update_one({"_id": artist["_id"]}, {"$set": {"stock_prices": stock_prices_array}})
         else:
-            print(f"Artist: {artist_name} - Insufficient data for {target_month}")
-
+            print(f"Artist: {artist_name} - No month data available.")
+    
 if __name__ == "__main__":
     main()
