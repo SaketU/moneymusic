@@ -119,7 +119,7 @@ app.get("/get-user", authenticateToken, async (req, res) => {
 });
 
 // Get all artists (Protected)
-app.get("/artists", authenticateToken, async (req, res) => {
+app.get("/artists", async (req, res) => {
    try {
       const artists = await Artist.find({});
       res.status(200).json(artists);
