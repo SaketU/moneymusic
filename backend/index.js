@@ -15,6 +15,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const Order = require("./models/order.model");
 const Stock = require("./models/stock.model");
+const Trade = require("./models/trade.model");
 
 mongoose
    .connect(config.connectionString)
@@ -98,7 +99,6 @@ const seedMarketStocks = async () => {
    for (const stockData of initialStocks) {
       for (let i = 0; i < 10; i++) {
          // Create 10 stocks of each artist
-         // ✅ Create a new Stock entry for each instance
          const newStock = new Stock({
             name: stockData.name,
             price: stockData.price,
@@ -108,8 +108,9 @@ const seedMarketStocks = async () => {
             `Created stock: ${stockData.name} with ID ${newStock._id}`
          );
 
-         // ✅ Add the newly created stock to the Market user's portfolio
-         marketUser.stocks.push({ stockId: newStock._id });
+         // Add the newly created stock to the Market user's portfolio
+         // Storing both the stock ID and name
+         marketUser.stocks.push({ stockId: newStock._id, name: newStock.name });
       }
    }
 
@@ -167,24 +168,30 @@ const matchOrders = async (newOrder) => {
          price,
       });
 
-      await trade.save();
-      matchedTrades.push(trade);
-
-      io.emit("newTrade", trade);
+      try {
+         await trade.save(); // Save the trade
+         matchedTrades.push(trade);
+         console.log(`Trade successfully created: ${trade._id}`);
+         io.emit("newTrade", trade);
+      } catch (error) {
+         console.error("Error saving trade:", error);
+      }
 
       const seller = await User.findById(sellerId);
       const buyer = await User.findById(buyerId);
 
       if (type === "buy") {
+         // For a buy order, add stocks to the buyer's portfolio
          for (let i = 0; i < matchedQuantity; i++) {
             const newStock = new Stock({ name: stock, price: price });
             await newStock.save();
-            buyer.stocks.push({ stockId: newStock._id });
+            buyer.stocks.push({ stockId: newStock._id, name: newStock.name });
          }
          await buyer.save();
       }
 
       if (type === "sell") {
+         // For a sell order, credit the seller's balance
          const revenue = matchedQuantity * price;
          seller.balance += revenue;
          await seller.save();
@@ -192,22 +199,19 @@ const matchOrders = async (newOrder) => {
 
       if (topOrder.quantity <= 0) oppositeHeap.pop();
 
-      // ✅ Update last matched price for the stock
+      // Update last matched price for the stock
       lastMatchedPrice = price;
    }
 
    if (lastMatchedPrice) {
       try {
-         // ✅ Update the Artist price with the last matched price
-         const updatedArtist = await Artist.findOneAndUpdate(
-            { name: stock },
-            { price: lastMatchedPrice },
-            { upsert: true, new: true }
+         // Update the artist's price by matching based on the artist's name
+         await Artist.findOneAndUpdate(
+            { name: stock }, // Assumes the artist schema uses "name"
+            { $set: { price: lastMatchedPrice } },
+            { upsert: true, new: true, strict: false }
          );
-
-         // ✅ Emit the new price to all connected clients
          io.emit("priceUpdate", { stock, price: lastMatchedPrice });
-
          console.log(
             `Updated artist price for ${stock} to ${lastMatchedPrice}`
          );
@@ -234,6 +238,8 @@ io.on("connection", (socket) => {
    console.log("New client connected:", socket.id);
 
    socket.on("placeOrder", async (orderData) => {
+      console.log("Received Order:", orderData);
+
       try {
          const { stock, type, quantity, price, userId } = orderData;
 
@@ -244,15 +250,15 @@ io.on("connection", (socket) => {
          }
 
          const user = await User.findById(userId);
-
          if (!user) {
             return socket.emit("orderError", { message: "User not found." });
          }
 
          const totalCost = quantity * price;
 
-         // ✅ Handle Buy Orders
          if (type === "buy") {
+            console.log(`Processing BUY order for ${stock}...`);
+
             if (user.balance < totalCost) {
                return socket.emit("orderError", {
                   message: "Insufficient balance.",
@@ -263,77 +269,96 @@ io.on("connection", (socket) => {
             user.balance -= totalCost;
             await user.save();
 
-            // ✅ Create a new Stock instance for each purchase
-            const newStock = new Stock({ name: stock, price });
-            await newStock.save();
+            const newOrder = new Order({
+               stock,
+               type,
+               quantity,
+               price,
+               userId,
+               status: "open",
+            });
+            await newOrder.save();
+            console.log("New buy order saved:", newOrder);
 
-            // ✅ Add this stock to the user's portfolio
-            user.stocks.push({ stockId: newStock._id });
+            getBuyHeap(stock).push({
+               _id: newOrder._id,
+               stock,
+               type,
+               quantity,
+               price,
+               userId,
+            });
+
+            for (let i = 0; i < quantity; i++) {
+               const newStock = new Stock({ name: stock, price: price });
+               await newStock.save();
+               user.stocks.push({ stockId: newStock._id, name: newStock.name });
+            }
             await user.save();
 
-            console.log(
-               `Added new stock ${stock} to user ${user.username}'s portfolio.`
-            );
+            socket.emit("orderPlaced", {
+               success: true,
+               message: "Buy order placed successfully.",
+            });
+
+            // Trigger order matching logic
+            const trades = await matchOrders(newOrder);
+            if (trades.length > 0) {
+               io.emit("tradesMatched", trades);
+            }
          }
 
-         // ✅ Handle Sell Orders
-         else if (type === "sell") {
-            const userStockIndex = user.stocks.findIndex(
-               (stockItem) => stockItem.stockId.toString() === stock
+         if (type === "sell") {
+            console.log(`Processing SELL order for ${stock}...`);
+            // Check if the user owns enough stocks to sell by matching the stock name
+            const userStocks = user.stocks.filter(
+               (stockItem) => stockItem.name === stock
             );
-
-            if (userStockIndex === -1) {
+            if (userStocks.length < quantity) {
                return socket.emit("orderError", {
-                  message: "You do not own this stock.",
+                  message: "Insufficient stocks to sell.",
                });
             }
-
-            // Remove the stock from user's portfolio
-            const [removedStock] = user.stocks.splice(userStockIndex, 1);
+            // Remove the specified quantity of stocks from the user's portfolio
+            const updatedStocks = [];
+            let removedCount = 0;
+            for (const stockItem of user.stocks) {
+               if (stockItem.name === stock && removedCount < quantity) {
+                  removedCount++;
+               } else {
+                  updatedStocks.push(stockItem);
+               }
+            }
+            user.stocks = updatedStocks;
             await user.save();
 
-            // Remove the stock from the Stock collection
-            await Stock.findByIdAndDelete(removedStock.stockId);
-
-            console.log(
-               `Removed stock ${stock} from user ${user.username}'s portfolio.`
-            );
-
-            // ✅ Credit user balance for selling stock
+            // Credit the user's balance with the revenue from the sale
             const revenue = price * quantity;
             user.balance += revenue;
             await user.save();
-         }
-
-         // Save the order
-         const newOrder = new Order(orderData);
-         await newOrder.save();
-
-         const trades = await matchOrders(newOrder);
-
-         // ✅ Broadcast matched trades to all clients if trades occurred
-         if (trades.length > 0) {
-            io.emit("tradesMatched", trades);
-
-            // ✅ Update the stock price to the last trade's price
-            const lastTradePrice = trades[trades.length - 1].price;
-            await Artist.findOneAndUpdate(
-               { name: stock },
-               { price: lastTradePrice },
-               { upsert: true, new: true }
+            console.log(
+               `Sell order processed. User credited with $${revenue}.`
             );
 
-            io.emit("priceUpdate", {
-               stock,
-               price: lastTradePrice,
+            socket.emit("orderPlaced", {
+               success: true,
+               message: "Sell order processed successfully.",
+               newBalance: user.balance,
             });
-         }
 
-         socket.emit("orderPlaced", {
-            success: true,
-            message: "Order successfully placed!",
-            newBalance: user.balance,
-         });
+            // Optionally, save the trade for the sell order
+            const trade = new Trade({
+               stock,
+               quantity,
+               buyOrderId: null,
+               sellOrderId: null,
+               buyerId: null,
+               sellerId: userId,
+               price,
+            });
+            await trade.save();
+            io.emit("newTrade", trade);
+         }
       } catch (error) {
          console.error("Error processing order:", error);
          socket.emit("orderError", { message: "Error processing order." });
@@ -345,7 +370,9 @@ io.on("connection", (socket) => {
    });
 });
 
-// Sign Up Route (Save user to the database)
+// ------------------ Auth Routes ------------------
+
+// Sign Up Route
 app.post("/signup", async (req, res) => {
    console.log("POST /signup called");
    const { fullName, email, username, password, confirmPassword } = req.body;
@@ -364,9 +391,9 @@ app.post("/signup", async (req, res) => {
 
    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
    if (existingUser) {
-      return res
-         .status(400)
-         .json({ message: "User already exists with that email or username" });
+      return res.status(400).json({
+         message: "User already exists with that email or username",
+      });
    }
 
    try {
@@ -377,7 +404,6 @@ app.post("/signup", async (req, res) => {
          username,
          password: hashedPassword,
       });
-
       await user.save();
 
       const accessToken = jwt.sign(
@@ -451,6 +477,7 @@ app.post("/login", async (req, res) => {
          user: { fullName: user.fullName, email: user.email },
       });
 });
+
 // Logout Route
 app.post("/logout", (req, res) => {
    res.clearCookie("token", {
@@ -464,22 +491,21 @@ app.post("/logout", (req, res) => {
 // ------------------ Protected Endpoints ------------------
 
 // Get user details (Protected)
-
 app.get("/get-user", authenticateToken, async (req, res) => {
    try {
       const user = await User.findById(req.user.userId);
       if (!user) return res.sendStatus(404);
-
       res.status(200).json({ message: "Authenticated", user });
    } catch (error) {
       res.status(500).json({ message: "Server error" });
    }
 });
+
+// Get a specific artist (Protected)
 app.get("/artist/:id", authenticateToken, async (req, res) => {
    try {
-      console.log("HERE");
+      console.log("Fetching artist with ID:", req.params.id);
       const artist = await Artist.findById(req.params.id);
-      console.log(artist);
       if (!artist) {
          return res
             .status(404)
@@ -491,7 +517,8 @@ app.get("/artist/:id", authenticateToken, async (req, res) => {
       res.status(500).json({ error: true, message: "Server error" });
    }
 });
-// Get all artists (Protected)
+
+// Get all artists (Public)
 app.get("/artists", async (req, res) => {
    try {
       const artists = await Artist.find({});
@@ -502,6 +529,7 @@ app.get("/artists", async (req, res) => {
    }
 });
 
+// Get all tickets (Public)
 app.get("/tickets", async (req, res) => {
    try {
       const tickets = await Ticket.find({});

@@ -17,6 +17,7 @@ const userSchema = new Schema(
                ref: "Stock",
                required: true,
             },
+            name: { type: String, required: true },
          },
       ],
    },
